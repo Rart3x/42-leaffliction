@@ -1,4 +1,4 @@
-from PIL import Image, ImageFilter
+from PIL import Image, ImageEnhance, ImageFilter
 
 
 class Augmentation:
@@ -18,6 +18,8 @@ class Augmentation:
         self.img_rotated = self.img.rotate(180)
         self.img_blured = self.img.filter(ImageFilter.GaussianBlur(radius=5))
 
+        enhancer = ImageEnhance.Contrast(self.img)
+        self.img_contrasted = enhancer.enhance(4)
 
     def __del__(self):
         """
@@ -39,7 +41,7 @@ class Augmentation:
 
     def contrast(self):
         """"""
-        pass
+        self.img_contrasted.show()
 
     def scaling(self):
         """"""
