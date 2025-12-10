@@ -15,11 +15,13 @@ class Augmentation:
         """
         self.path = p_path
         self.img = Image.open(self.path)
-        self.img_rotated = self.img.rotate(180)
-        self.img_blured = self.img.filter(ImageFilter.GaussianBlur(radius=5))
 
         enhancer = ImageEnhance.Contrast(self.img)
+
+        self.img_rotated = self.img.rotate(180)
+        self.img_blured = self.img.filter(ImageFilter.GaussianBlur(radius=5))
         self.img_contrasted = enhancer.enhance(4)
+        self.img_scaled = self.img.resize((self.img.width * 2, self.img.height * 2), Image.LANCZOS)
 
     def __del__(self):
         """
@@ -45,7 +47,7 @@ class Augmentation:
 
     def scaling(self):
         """"""
-        pass
+        self.img_scaled.show()
 
     def illumination(self):
         """"""
