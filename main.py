@@ -28,8 +28,8 @@ def main():
     #v_augmentation.rotation()
     #v_augmentation.blur()
     #v_augmentation.contrast()
-    v_augmentation.scaling()
-
+    #v_augmentation.scaling()
+    v_augmentation.illumination()
 
 if __name__ == '__main__':
     main()
