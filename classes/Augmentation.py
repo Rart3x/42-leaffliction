@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageFilter
 
 
 class Augmentation:
@@ -15,7 +15,9 @@ class Augmentation:
         """
         self.path = p_path
         self.img = Image.open(self.path)
-        self.image_rotated = self.img.rotate(180)
+        self.img_rotated = self.img.rotate(180)
+        self.img_blured = self.img.filter(ImageFilter.GaussianBlur(radius=5))
+
 
     def __del__(self):
         """
@@ -29,11 +31,11 @@ class Augmentation:
 
     def rotation(self):
         """"""
-        self.image_rotated.show()
+        self.img_rotated.show()
 
     def blur(self):
         """"""
-        pass
+        self.img_blured.show()
 
     def contrast(self):
         """"""

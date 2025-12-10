@@ -26,6 +26,7 @@ def main():
 
     v_augmentation.original()
     v_augmentation.rotation()
+    v_augmentation.blur()
 
 
 if __name__ == '__main__':
