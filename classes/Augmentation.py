@@ -1,12 +1,20 @@
+from colorama import Fore, Style
+from PIL import Image
+
+
 class Augmentation:
     """
     Augmentation class
     """
-    def __init__(self):
+    def __init__(self, p_path: str):
         """
         Augmentation constructor
+
+        :param p_path: path to the image
+
+        :return: None
         """
-        pass
+        self.path = p_path
 
     def __del__(self):
         """
@@ -16,7 +24,13 @@ class Augmentation:
 
     def original(self):
         """"""
-        pass
+        try:
+            img = Image.open(self.path)
+            img.show()
+        except Exception as e:
+            print(f"{Fore.RED}"
+                  f"Error: {e}"
+                  f"{Style.RESET_ALL}")
 
     def rotation(self):
         """"""

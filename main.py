@@ -1,3 +1,4 @@
+from classes.Augmentation import Augmentation
 from colorama import Fore, Style
 
 import os
@@ -19,6 +20,11 @@ def main():
               f"Error: argument need to be a file path"
               f"{Style.RESET_ALL}")
         return
+
+    v_path = sys.argv[1]
+    v_augmentation = Augmentation(v_path)
+
+    v_augmentation.original()
 
 
 if __name__ == '__main__':
