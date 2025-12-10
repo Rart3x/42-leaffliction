@@ -25,6 +25,7 @@ def main():
     v_augmentation = Augmentation(v_path)
 
     v_augmentation.original()
+    v_augmentation.rotation()
 
 
 if __name__ == '__main__':
