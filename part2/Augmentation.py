@@ -63,7 +63,7 @@ class Augmentation:
 
         # Image transformations
         self.img_rotated = self.img.rotate(180)
-        self.img_blured = self.img.filter(ImageFilter.GaussianBlur(radius=5))
+        self.img_blurred = self.img.filter(ImageFilter.GaussianBlur(radius=5))
         self.img_contrasted = v_enhancer_contrast.enhance(4)
         self.img_illuminated = v_enhancer_brightness.enhance(3)
         self.img_scaled = zoom(self.img, 2)
