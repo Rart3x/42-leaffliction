@@ -60,7 +60,7 @@ def process_folder(p_src: str, p_dst: str):
             sys.exit(1)
     
     jpg_files = [f for f in os.listdir(p_src) 
-                if f.lower().endswith(('.jpg', '.jpeg')) and 
+                if is_jpg(os.path.join(p_src, f)) and 
                 os.path.isfile(os.path.join(p_src, f))]
 
 
