@@ -32,20 +32,20 @@ class Augmentation:
         v_enhancer_contrast = ImageEnhance.Contrast(self.img)
 
         # Image transformations
-        self.img_rotated = self.img.rotate(180)     # 180° rotation
-        self.img_blured = self.img.filter(ImageFilter.GaussianBlur(radius=5))  # Gaussian blur
-        self.img_contrasted = v_enhancer_contrast.enhance(4)    # Strong contrast
-        self.img_illuminated = v_enhancer_brightness.enhance(3) # Increased brightness
+        self.img_rotated = self.img.rotate(180)
+        self.img_blured = self.img.filter(ImageFilter.GaussianBlur(radius=5))
+        self.img_contrasted = v_enhancer_contrast.enhance(4)
+        self.img_illuminated = v_enhancer_brightness.enhance(3)
         self.img_scaled = self.img.resize(
             (self.img.width * 2, self.img.height * 2),
             Image.LANCZOS
-        )   # 2x scaling
+        )
         self.img_projected = self.img.transform(
             self.img.size,
             Image.PERSPECTIVE,
             v_coeffs,
             Image.BICUBIC
-        )   # Perspective transform
+        )
 
     def __del__(self):
         """
@@ -58,42 +58,62 @@ class Augmentation:
         Save the rotated image.
         """
         self.img_rotated.save(self.path_without_extension + "_rotated.JPG")
-        print(f"{Fore.GREEN}Image : {self.path_without_extension}_rotated.JPG successfully created{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}Image :"
+              f"{self.path_without_extension}_rotated.JPG"
+              f"successfully created"
+              f"{Style.RESET_ALL}")
 
     def blur(self):
         """
         Save the blurred image.
         """
         self.img_blured.save(self.path_without_extension + "_blured.JPG")
-        print(f"{Fore.GREEN}Image : {self.path_without_extension}_blured.JPG successfully created{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}Image :"
+              f"{self.path_without_extension}_blured.JPG"
+              f"successfully created"
+              f"{Style.RESET_ALL}")
 
     def contrast(self):
         """
         Save the contrasted image.
         """
-        self.img_contrasted.save(self.path_without_extension + "_contrasted.JPG")
-        print(f"{Fore.GREEN}Image : {self.path_without_extension}_contrasted.JPG successfully created{Style.RESET_ALL}")
+        self.img_contrasted.save(self.path_without_extension +
+                                 "_contrasted.JPG")
+        print(f"{Fore.GREEN}Image :"
+              f"{self.path_without_extension}_contrasted.JPG"
+              f"successfully created"
+              f"{Style.RESET_ALL}")
 
     def scaling(self):
         """
         Save the scaled image.
         """
         self.img_scaled.save(self.path_without_extension + "_scaled.JPG")
-        print(f"{Fore.GREEN}Image : {self.path_without_extension}_scaled.JPG successfully created{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}Image :"
+              f"{self.path_without_extension}_scaled.JPG"
+              f"successfully created"
+              f"{Style.RESET_ALL}")
 
     def illumination(self):
         """
         Save the illuminated image.
         """
-        self.img_illuminated.save(self.path_without_extension + "_illuminated.JPG")
-        print(f"{Fore.GREEN}Image : {self.path_without_extension}_illuminated.JPG successfully created{Style.RESET_ALL}")
+        self.img_illuminated.save(self.path_without_extension +
+                                  "_illuminated.JPG")
+        print(f"{Fore.GREEN}Image :"
+              f"{self.path_without_extension}_illuminated.JPG"
+              f"successfully create"
+              f"{Style.RESET_ALL}")
 
     def projective(self):
         """
         Save the projectively transformed image.
         """
         self.img_projected.save(self.path_without_extension + "_projected.JPG")
-        print(f"{Fore.GREEN}Image : {self.path_without_extension}_projected.JPG successfully created{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}Image :"
+              f"{self.path_without_extension}_projected.JPG"
+              f"successfully create"
+              f"{Style.RESET_ALL}")
 
     def show_all(self):
         """
