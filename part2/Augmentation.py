@@ -14,7 +14,7 @@ def zoom(img, zoom_factor):
     :param img: The input PIL Image to zoom into.
     :param zoom_factor: The zoom intensity.
                         A value > 1 zooms in (e.g., 1.5 = 150% zoom).
-    :return: A new PIL Image representing the zoomed version of the input image.
+    :return: A new PIL Image representingthe zoomed version of the input image.
     """
     width, height = img.size
 
@@ -205,6 +205,7 @@ def main():
 
     v_augmentation = Augmentation(v_path)
     v_augmentation.show_all()
+
 
 if __name__ == '__main__':
     main()
