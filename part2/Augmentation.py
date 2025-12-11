@@ -5,6 +5,35 @@ from colorama import Fore, Style
 from PIL import Image, ImageEnhance, ImageFilter
 
 
+def zoom(img, zoom_factor):
+    """
+    Zoom into the image without increasing the final output size.
+    The zoom is performed by cropping the center region of the image
+    and resizing it back to the original dimensions.
+
+    :param img: The input PIL Image to zoom into.
+    :param zoom_factor: The zoom intensity.
+                        A value > 1 zooms in (e.g., 1.5 = 150% zoom).
+    :return: A new PIL Image representing the zoomed version of the input image.
+    """
+    width, height = img.size
+
+    # Compute the target crop size based on the zoom factor
+    new_w = int(width / zoom_factor)
+    new_h = int(height / zoom_factor)
+
+    # Compute a centered crop box
+    left = (width - new_w) // 2
+    top = (height - new_h) // 2
+    right = left + new_w
+    bottom = top + new_h
+
+    # Crop the center of the image and resize back to the original resolution
+    cropped_img = img.crop((left, top, right, bottom))
+
+    return cropped_img.resize((width, height), Image.LANCZOS)
+
+
 class Augmentation:
     """
     Augmentation class that applies several transformations to an image
@@ -37,10 +66,7 @@ class Augmentation:
         self.img_blured = self.img.filter(ImageFilter.GaussianBlur(radius=5))
         self.img_contrasted = v_enhancer_contrast.enhance(4)
         self.img_illuminated = v_enhancer_brightness.enhance(3)
-        self.img_scaled = self.img.resize(
-            (self.img.width * 2, self.img.height * 2),
-            Image.LANCZOS
-        )
+        self.img_scaled = zoom(self.img, 2)
         self.img_projected = self.img.transform(
             self.img.size,
             Image.PERSPECTIVE,
@@ -176,10 +202,9 @@ def main():
         return
 
     v_path = sys.argv[1]
+
     v_augmentation = Augmentation(v_path)
-
     v_augmentation.show_all()
-
 
 if __name__ == '__main__':
     main()
