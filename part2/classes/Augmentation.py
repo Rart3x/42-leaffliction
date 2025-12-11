@@ -6,16 +6,17 @@ from PIL import Image, ImageEnhance, ImageFilter
 
 class Augmentation:
     """
-    Augmentation class
+    Augmentation class that applies several transformations to an image
+    such as rotation, blur, contrast enhancement, illumination, scaling,
+    and projective transformation.
     """
     def __init__(self, p_path: str):
         """
-        Augmentation constructor
+        Constructor. Loads the image and applies all augmentations.
 
-        :param p_path: path to the image
-
-        :return: None
+        :param p_path: Path to the input image.
         """
+        # Perspective coefficients
         v_coeffs = [
             1, 0.2, 0,
             0, 1, 0,
@@ -26,89 +27,113 @@ class Augmentation:
         self.path_without_extension = os.path.splitext(p_path)[0]
         self.img = Image.open(self.path)
 
+        # Enhancers
         v_enhancer_brightness = ImageEnhance.Brightness(self.img)
         v_enhancer_contrast = ImageEnhance.Contrast(self.img)
 
-        self.img_rotated = self.img.rotate(180)
-        self.img_blured = self.img.filter(ImageFilter.GaussianBlur(radius=5))
-        self.img_contrasted = v_enhancer_contrast.enhance(4)
-        self.img_illuminated = v_enhancer_brightness.enhance(3)
+        # Image transformations
+        self.img_rotated = self.img.rotate(180)     # 180° rotation
+        self.img_blured = self.img.filter(ImageFilter.GaussianBlur(radius=5))  # Gaussian blur
+        self.img_contrasted = v_enhancer_contrast.enhance(4)    # Strong contrast
+        self.img_illuminated = v_enhancer_brightness.enhance(3) # Increased brightness
         self.img_scaled = self.img.resize(
-            (
-                self.img.width * 2,
-                self.img.height * 2),
+            (self.img.width * 2, self.img.height * 2),
             Image.LANCZOS
-        )
+        )   # 2x scaling
         self.img_projected = self.img.transform(
             self.img.size,
             Image.PERSPECTIVE,
             v_coeffs,
-            Image.BICUBIC)
+            Image.BICUBIC
+        )   # Perspective transform
 
     def __del__(self):
         """
-        Augmentation constructor
+        Destructor.
         """
         pass
 
-    def original(self):
-        """"""
-        self.img.show()
-
     def rotation(self):
-        """"""
-        self.img_rotated.show()
+        """
+        Save the rotated image.
+        """
         self.img_rotated.save(self.path_without_extension + "_rotated.JPG")
-        print(f"{Fore.GREEN}Image :",
-              self.path_without_extension +
-              f"_rotated.JPG successfully created"
-              f"{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}Image : {self.path_without_extension}_rotated.JPG successfully created{Style.RESET_ALL}")
 
     def blur(self):
-        """"""
-        self.img_blured.show()
+        """
+        Save the blurred image.
+        """
         self.img_blured.save(self.path_without_extension + "_blured.JPG")
-        print(f"{Fore.GREEN}Image :",
-              self.path_without_extension +
-              f"_blured.JPG successfully created"
-              f"{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}Image : {self.path_without_extension}_blured.JPG successfully created{Style.RESET_ALL}")
 
     def contrast(self):
-        """"""
-        self.img_contrasted.show()
-        self.img_contrasted.save(self.path_without_extension +
-                                 "_contrasted.JPG")
-        print(f"{Fore.GREEN}Image :",
-              self.path_without_extension +
-              f"_contrasted.JPG successfully created"
-              f"{Style.RESET_ALL}")
+        """
+        Save the contrasted image.
+        """
+        self.img_contrasted.save(self.path_without_extension + "_contrasted.JPG")
+        print(f"{Fore.GREEN}Image : {self.path_without_extension}_contrasted.JPG successfully created{Style.RESET_ALL}")
 
     def scaling(self):
-        """"""
-        self.img_scaled.show()
-        self.img_scaled.save(self.path_without_extension +
-                             "_scaled.JPG")
-        print(f"{Fore.GREEN}Image :",
-              self.path_without_extension +
-              f"_scaled.JPG successfully created"
-              f"{Style.RESET_ALL}")
+        """
+        Save the scaled image.
+        """
+        self.img_scaled.save(self.path_without_extension + "_scaled.JPG")
+        print(f"{Fore.GREEN}Image : {self.path_without_extension}_scaled.JPG successfully created{Style.RESET_ALL}")
 
     def illumination(self):
-        """"""
-        self.img_illuminated.show()
-        self.img_illuminated.save(self.path_without_extension +
-                                  "_illuminated.JPG")
-        print(f"{Fore.GREEN}Image :",
-              self.path_without_extension +
-              f"_illuminated.JPG successfully created"
-              f"{Style.RESET_ALL}")
+        """
+        Save the illuminated image.
+        """
+        self.img_illuminated.save(self.path_without_extension + "_illuminated.JPG")
+        print(f"{Fore.GREEN}Image : {self.path_without_extension}_illuminated.JPG successfully created{Style.RESET_ALL}")
 
     def projective(self):
-        """"""
+        """
+        Save the projectively transformed image.
+        """
         self.img_projected.show()
-        self.img_projected.save(self.path_without_extension +
-                                "_projected.JPG")
-        print(f"{Fore.GREEN}Image :",
-              self.path_without_extension +
-              f"_projected.JPG successfully created"
-              f"{Style.RESET_ALL}")
+        self.img_projected.save(self.path_without_extension + "_projected.JPG")
+        print(f"{Fore.GREEN}Image : {self.path_without_extension}_projected.JPG successfully created{Style.RESET_ALL}")
+
+    def show_all(self):
+        """
+        Display all augmented images side by side in a single window.
+        Also saves the final collage as a single image.
+        """
+        # List of all images
+        images = [
+            self.img,
+            self.img_rotated,
+            self.img_blured,
+            self.img_contrasted,
+            self.img_illuminated,
+            self.img_scaled,
+            self.img_projected
+        ]
+
+        # Resize all images to match the original image size
+        base_w, base_h = self.img.size
+        images = [img.resize((base_w, base_h)) for img in images]
+
+        # Compute the size of the final collage
+        total_width = base_w * len(images)
+        max_height = base_h
+
+        # Create a blank canvas
+        collage = Image.new("RGB", (total_width, max_height))
+
+        # Paste all images horizontally
+        x_offset = 0
+        for img in images:
+            collage.paste(img, (x_offset, 0))
+            x_offset += base_w
+
+        self.blur()
+        self.contrast()
+        self.scaling()
+        self.illumination()
+        self.projective()
+
+        # Display the final collage
+        collage.show()

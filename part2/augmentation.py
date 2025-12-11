@@ -24,14 +24,7 @@ def main():
     v_path = sys.argv[1]
     v_augmentation = Augmentation(v_path)
 
-    v_augmentation.original()
-    v_augmentation.rotation()
-    v_augmentation.blur()
-    v_augmentation.contrast()
-    v_augmentation.scaling()
-    v_augmentation.illumination()
-    v_augmentation.projective()
-
+    v_augmentation.show_all()
 
 if __name__ == '__main__':
     main()
