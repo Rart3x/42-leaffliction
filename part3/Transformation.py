@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from PIL import Image, UnidentifiedImageError
 from plantcv import plantcv as pcv
 
+import argparse
 import os
 import sys
 
@@ -34,33 +35,59 @@ class Transformation:
         plt.show()
 
 
+def process_image(p_path: str):
+    if not os.path.isfile(p_path):
+        print("Need to be a file")
+        sys.exit(1)
+    if not is_jpg(p_path):
+        print("Needs to be a jpeg/jpg file")
+        sys.exit(1)
+    v_transformation = Transformation(p_path)
+    v_transformation.show()
+    return
+
+
+def process_folder(p_src: str, p_dst: str):
+    if not os.path.isdir(p_src):
+        print("src existe pas")
+        sys.exit(1)
+    if not os.path.isdir(p_dst):
+        # trying create dir before process all images
+        try:
+            os.makedirs(p_dst)
+        except Exception as e:
+            print("Destination folder can't be made", e)
+            sys.exit(1)
+    
+    jpg_files = [f for f in os.listdir(p_src) 
+                if f.lower().endswith(('.jpg', '.jpeg')) and 
+                os.path.isfile(os.path.join(p_src, f))]
+
+
 def main():
     """
     Main function
     """
-    if len(sys.argv) != 2:
-        print(f"{Fore.RED}"
-              f"Usage: python augmentation.py file_path"
-              f"{Style.RESET_ALL}")
-        return
-
-    if not os.path.isfile(sys.argv[1]):
-        print(f"{Fore.RED}"
-              f"Error: argument must be a file path"
-              f"{Style.RESET_ALL}")
-        return
-
-    if not is_jpg(sys.argv[1]):
-        print(f"{Fore.RED}"
-              f"Error: file must be a JPG/JPEG image"
-              f"{Style.RESET_ALL}")
-        return
-
-    v_path = sys.argv[1]
-
-    transformation = Transformation(v_path)
-
-    transformation.show()
+    parser = argparse.ArgumentParser(
+                        prog='Transformation',
+                        description='Apply image transformations using PlantCV')
+    
+    parser.add_argument('image_path', nargs='?', 
+                       help='Direct path to a single image file')
+    parser.add_argument('-src', '--source', 
+                       help='Source directory containing images')
+    parser.add_argument('-dst', '--destination', 
+                       help='Destination directory for saving transformations')
+    args = parser.parse_args()
+    v_is_folder = args.source or args.destination
+    v_is_image = args.image_path
+    if v_is_image and v_is_folder:
+        print("Choisis l'un des deux en faites")
+        sys.exit(1)
+    if v_is_image:
+        process_image(args.image_path)
+    elif v_is_folder:
+        process_folder(args.source, args.destination)
 
 
 if __name__ == '__main__':
