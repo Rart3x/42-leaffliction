@@ -151,7 +151,7 @@ class Augmentation:
         images = [
             self.img,
             self.img_rotated,
-            self.img_blured,
+            self.img_blurred,
             self.img_contrasted,
             self.img_illuminated,
             self.img_scaled,
