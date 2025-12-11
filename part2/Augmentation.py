@@ -85,8 +85,8 @@ class Augmentation:
         Save the rotated image.
         """
         self.img_rotated.save(self.path_without_extension + "_rotated.JPG")
-        print(f"{Fore.GREEN}Image :"
-              f"{self.path_without_extension}_rotated.JPG"
+        print(f"{Fore.GREEN}Image : "
+              f"{self.path_without_extension}_rotated.JPG "
               f"successfully created"
               f"{Style.RESET_ALL}")
 
@@ -95,8 +95,8 @@ class Augmentation:
         Save the blurred image.
         """
         self.img_blured.save(self.path_without_extension + "_blured.JPG")
-        print(f"{Fore.GREEN}Image :"
-              f"{self.path_without_extension}_blured.JPG"
+        print(f"{Fore.GREEN}Image : "
+              f"{self.path_without_extension}_blured.JPG "
               f"successfully created"
               f"{Style.RESET_ALL}")
 
@@ -106,8 +106,8 @@ class Augmentation:
         """
         self.img_contrasted.save(self.path_without_extension +
                                  "_contrasted.JPG")
-        print(f"{Fore.GREEN}Image :"
-              f"{self.path_without_extension}_contrasted.JPG"
+        print(f"{Fore.GREEN}Image : "
+              f"{self.path_without_extension}_contrasted.JPG "
               f"successfully created"
               f"{Style.RESET_ALL}")
 
@@ -116,8 +116,8 @@ class Augmentation:
         Save the scaled image.
         """
         self.img_scaled.save(self.path_without_extension + "_scaled.JPG")
-        print(f"{Fore.GREEN}Image :"
-              f"{self.path_without_extension}_scaled.JPG"
+        print(f"{Fore.GREEN}Image : "
+              f"{self.path_without_extension}_scaled.JPG "
               f"successfully created"
               f"{Style.RESET_ALL}")
 
@@ -127,8 +127,8 @@ class Augmentation:
         """
         self.img_illuminated.save(self.path_without_extension +
                                   "_illuminated.JPG")
-        print(f"{Fore.GREEN}Image :"
-              f"{self.path_without_extension}_illuminated.JPG"
+        print(f"{Fore.GREEN}Image : "
+              f"{self.path_without_extension}_illuminated.JPG "
               f"successfully created"
               f"{Style.RESET_ALL}")
 
@@ -137,8 +137,8 @@ class Augmentation:
         Save the projectively transformed image.
         """
         self.img_projected.save(self.path_without_extension + "_projected.JPG")
-        print(f"{Fore.GREEN}Image :"
-              f"{self.path_without_extension}_projected.JPG"
+        print(f"{Fore.GREEN}Image : "
+              f"{self.path_without_extension}_projected.JPG "
               f"successfully created"
               f"{Style.RESET_ALL}")
 
@@ -151,7 +151,7 @@ class Augmentation:
         images = [
             self.img,
             self.img_rotated,
-            self.img_blured,
+            self.img_blurred,
             self.img_contrasted,
             self.img_illuminated,
             self.img_scaled,
@@ -175,6 +175,7 @@ class Augmentation:
             collage.paste(img, (x_offset, 0))
             x_offset += base_w
 
+        self.rotation()
         self.blur()
         self.contrast()
         self.scaling()
