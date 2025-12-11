@@ -1,2 +1,4 @@
+.idea
 leaves
 **/*.venv
+__pycache__
