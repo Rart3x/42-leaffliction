@@ -197,7 +197,7 @@ def main():
 
     if not os.path.isfile(sys.argv[1]):
         print(f"{Fore.RED}"
-              f"Error: argument need to be a file path"
+              f"Error: argument must be a file path"
               f"{Style.RESET_ALL}")
         return
 
