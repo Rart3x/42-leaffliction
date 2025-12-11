@@ -1,5 +1,7 @@
 from colorama import Fore, Style
+from matplotlib import pyplot as plt
 from PIL import Image, UnidentifiedImageError
+from plantcv import plantcv as pcv
 
 import os
 import sys
@@ -22,10 +24,14 @@ def is_jpg(path: str) -> bool:
 
 class Transformation:
     def __init__(self, path: str):
-        pass
+        self.img, self.path, self.filename = pcv.readimage(path)
 
     def __del__(self):
         pass
+
+    def show(self):
+        plt.imshow(self.img)
+        plt.show()
 
 
 def main():
@@ -45,12 +51,16 @@ def main():
         return
 
     if not is_jpg(sys.argv[1]):
-        print(f"{Fore.RED}Error: file must be a JPG/JPEG image{Style.RESET_ALL}")
+        print(f"{Fore.RED}"
+              f"Error: file must be a JPG/JPEG image"
+              f"{Style.RESET_ALL}")
         return
 
     v_path = sys.argv[1]
 
     transformation = Transformation(v_path)
+
+    transformation.show()
 
 
 if __name__ == '__main__':
