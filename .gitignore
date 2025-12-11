@@ -1,2 +1,3 @@
 .idea
-part2/leaves
+leaves
+**/*.venv
