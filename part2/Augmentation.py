@@ -127,9 +127,9 @@ class Augmentation:
         """
         self.img_illuminated.save(self.path_without_extension +
                                   "_illuminated.JPG")
-        print(f"{Fore.GREEN}Image :"
-              f"{self.path_without_extension}_illuminated.JPG"
-              f"successfully create"
+        print(f"{Fore.GREEN}Image : "
+              f"{self.path_without_extension}_illuminated.JPG "
+              f"successfully created"
               f"{Style.RESET_ALL}")
 
     def projective(self):
@@ -137,9 +137,9 @@ class Augmentation:
         Save the projectively transformed image.
         """
         self.img_projected.save(self.path_without_extension + "_projected.JPG")
-        print(f"{Fore.GREEN}Image :"
-              f"{self.path_without_extension}_projected.JPG"
-              f"successfully create"
+        print(f"{Fore.GREEN}Image : "
+              f"{self.path_without_extension}_projected.JPG "
+              f"successfully created"
               f"{Style.RESET_ALL}")
 
     def show_all(self):
