@@ -92,7 +92,6 @@ class Augmentation:
         """
         Save the projectively transformed image.
         """
-        self.img_projected.show()
         self.img_projected.save(self.path_without_extension + "_projected.JPG")
         print(f"{Fore.GREEN}Image : {self.path_without_extension}_projected.JPG successfully created{Style.RESET_ALL}")
 
