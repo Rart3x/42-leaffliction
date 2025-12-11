@@ -175,6 +175,7 @@ class Augmentation:
             collage.paste(img, (x_offset, 0))
             x_offset += base_w
 
+        self.rotation()
         self.blur()
         self.contrast()
         self.scaling()
