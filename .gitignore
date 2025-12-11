@@ -1,3 +1,5 @@
 .idea
 leaves
 **/*.venv
+__pycache__/
+*.pyc
