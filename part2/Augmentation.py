@@ -94,9 +94,9 @@ class Augmentation:
         """
         Save the blurred image.
         """
-        self.img_blurred.save(self.path_without_extension + "_blured.JPG")
+        self.img_blurred.save(self.path_without_extension + "_blurred.JPG")
         print(f"{Fore.GREEN}Image : "
-              f"{self.path_without_extension}_blured.JPG "
+              f"{self.path_without_extension}_blurred.JPG "
               f"successfully created"
               f"{Style.RESET_ALL}")
 
