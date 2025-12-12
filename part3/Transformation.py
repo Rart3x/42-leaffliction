@@ -2,6 +2,7 @@ from colorama import Fore, Style
 from matplotlib import pyplot as plt
 from PIL import Image, UnidentifiedImageError
 from plantcv import plantcv as pcv
+import cv2
 
 import argparse
 import os
@@ -44,11 +45,22 @@ class Transformation:
         plt.imshow(v_masked)
         plt.show()
 
-    def roi(self):
-        v_roi = pcv.roi.custom(img=self.img, vertices=[[1190,490], [1470,830], 
-                                        [1565,1460], [1130,1620], 
-                                        [920,1430], [890,950]])
-        plt.imshow(v_roi)
+    def roi(self):        
+        gray = pcv.rgb2gray_lab(rgb_img=self.img, channel='a')
+        
+        mask = pcv.threshold.binary(gray_img=gray, threshold=100, object_type='light')
+
+        roi = pcv.roi.from_binary_image(img=self.img, bin_img=mask)
+        
+        img_with_roi = self.img.copy()
+        
+        for contour in roi.contours:
+            if isinstance(contour, tuple):
+                contour = list(contour)
+            cv2.drawContours(img_with_roi, contour, -1, (255, 0, 0), 3)
+        
+        plt.imshow(cv2.cvtColor(img_with_roi, cv2.COLOR_BGR2RGB))
+        plt.title('Automatic ROI Detection')
         plt.show()
 
     def show(self):
@@ -64,7 +76,13 @@ def process_image(p_path: str, p_type: str):
         print("Needs to be a jpeg/jpg file")
         sys.exit(1)
     v_transformation = Transformation(p_path)
-    v_transformation.show()
+    match p_type:
+        case "gauss":
+            v_transformation.gauss()
+        case "roi":
+            v_transformation.roi()
+        case "mask":
+            v_transformation.mask()
     return
 
 
