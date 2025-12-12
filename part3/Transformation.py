@@ -23,13 +23,15 @@ def folder(p_src: str, p_dst: str, p_type: str):
         try:
             os.makedirs(p_dst)
         except Exception as e:
-            print(f"{Fore.RED}Error: destination folder can't be created: {e}{Style.RESET_ALL}")
+            print(f"{Fore.RED}Error: destination folder can't be "
+                  f"created: {e}{Style.RESET_ALL}")
             return []
 
     jpg_files = [
         os.path.abspath(os.path.join(p_src, f))
         for f in os.listdir(p_src)
-        if is_jpg(os.path.join(p_src, f)) and os.path.isfile(os.path.join(p_src, f))
+        if is_jpg(os.path.join(p_src, f))
+        and os.path.isfile(os.path.join(p_src, f))
     ]
 
     return jpg_files
@@ -69,7 +71,8 @@ def parse_input():
         help='Destination directory for saving transformations'
     )
 
-    parser.add_argument('-v', '--visual', action='store_true', help='Enable visual rendering')
+    parser.add_argument('-v', '--visual', action='store_true',
+                        help='Enable visual rendering')
 
     v_args = parser.parse_args()
     v_path = v_args.image_path
@@ -79,14 +82,17 @@ def parse_input():
 
 class Transformation:
     """
-    Class representing a single image transformation, with optional visual output.
+    Class representing a single image transformation,
+    with optional visual output.
     """
     def __init__(self, p_path: str, p_visual: bool):
         """
-        Constructor: Loads the image and initializes placeholders for transformation outputs.
+        Constructor: Loads the image and initializes placeholders
+        for transformation outputs.
 
         :param p_path: Path to the image file.
-        :param p_visual: Boolean flag to display images visually during processing.
+        :param p_visual: Boolean flag to display images visually
+                         during processing.
         """
         self.img, self.path, self.filename = pcv.readimage(p_path)
         self.visual = p_visual
@@ -114,14 +120,16 @@ class Transformation:
             # TODO: implement other cases
             return
         except Exception as e:
-            print(f"{Fore.RED}Error: Processing failed for file: {self.path}: {e}{Style.RESET_ALL}")
+            print(f"{Fore.RED}Error: Processing failed for file: "
+                  f"{self.path}: {e}{Style.RESET_ALL}")
             return
 
     def gauss(self):
         """
         Applies Gaussian blur to the image.
         """
-        self.img_gauss = pcv.gaussian_blur(img=self.img, ksize=(21, 21), sigma_x=0, sigma_y=0)
+        self.img_gauss = pcv.gaussian_blur(img=self.img, ksize=(21, 21),
+                                           sigma_x=0, sigma_y=0)
 
         if self.visual:
             plt.imshow(self.img_gauss)
@@ -133,9 +141,10 @@ class Transformation:
         Applies a binary mask based on the saturation channel of the image.
         """
         v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
-        v_mask_binary = pcv.threshold.binary(gray_img=v_hsv, threshold=85,
-                                            object_type='light')
-        self.img_masked = pcv.apply_mask(img=self.img, mask=v_mask_binary, mask_color='white')
+        v_mask_binary = pcv.threshold.binary(
+            gray_img=v_hsv, threshold=85, object_type='light')
+        self.img_masked = pcv.apply_mask(
+            img=self.img, mask=v_mask_binary, mask_color='white')
 
         if self.visual:
             plt.imshow(self.img_masked)
@@ -144,11 +153,12 @@ class Transformation:
 
     def roi(self):
         """
-        Detects Regions of Interest (ROI) using the 'a' channel of LAB colorspace.
-        Draws contours on the image.
+        Detects Regions of Interest (ROI) using the 'a' channel
+        of LAB colorspace. Draws contours on the image.
         """
         v_gray = pcv.rgb2gray_lab(rgb_img=self.img, channel='a')
-        v_mask = pcv.threshold.binary(gray_img=v_gray, threshold=100, object_type='light')
+        v_mask = pcv.threshold.binary(
+            gray_img=v_gray, threshold=100, object_type='light')
         v_roi = pcv.roi.from_binary_image(img=self.img, bin_img=v_mask)
 
         self.img_roi = self.img.copy()
@@ -165,8 +175,9 @@ class Transformation:
 
     def show_all(self):
         """
-        Displays all available transformed images in a single figure with subplots.
-        Click on an image to open it in a separate interactive window.
+        Displays all available transformed images in a single figure
+        with subplots. Click on an image to open it in a separate
+        interactive window.
         """
         # Collect all images and titles
         images = [
@@ -195,7 +206,9 @@ class Transformation:
         # Display each image in a subplot
         for ax, (img, title) in zip(axes, images):
             if isinstance(img, np.ndarray):
-                img_disp = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) if img.ndim == 3 and img.shape[-1] == 3 else img
+                img_disp = (cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                            if img.ndim == 3 and img.shape[-1] == 3
+                            else img)
             else:
                 img_disp = img
             ax.imshow(img_disp)
@@ -209,7 +222,9 @@ class Transformation:
                     img, title = images[i]
                     plt.figure(figsize=(6, 6))
                     if isinstance(img, np.ndarray):
-                        img_disp = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) if img.ndim == 3 and img.shape[-1] == 3 else img
+                        img_disp = (cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                                    if img.ndim == 3 and img.shape[-1] == 3
+                                    else img)
                     else:
                         img_disp = img
                     plt.imshow(img_disp)
@@ -225,8 +240,8 @@ class Transformation:
 def main():
     """
     Main entry point of the script.
-    Parses input arguments, iterates over images, applies requested transformations,
-    and displays all results.
+    Parses input arguments, iterates over images, applies requested
+    transformations, and displays all results.
     """
     v_path, v_args = parse_input()
 
@@ -245,7 +260,8 @@ def main():
 
     elif os.path.isfile(v_path):
         if not is_jpg(v_path):
-            print(f"{Fore.RED}Error: argument needs to be a jpg/jpeg{Style.RESET_ALL}")
+            print(f"{Fore.RED}Error: argument needs to be a "
+                  f"jpg/jpeg{Style.RESET_ALL}")
             return
 
         # Process single image
@@ -254,7 +270,8 @@ def main():
         v_transformation.show_all()
 
     else:
-        print(f"{Fore.RED}Error: Provided path does not exist{Style.RESET_ALL}")
+        print(f"{Fore.RED}Error: Provided path does not exist"
+              f"{Style.RESET_ALL}")
 
 
 if __name__ == '__main__':
