@@ -15,6 +15,15 @@ g_suffixes = {
 }
 
 
+def is_jpg(file_path: str) -> bool:
+    """
+    Check if the given file is a JPEG image (.jpg or .jpeg), case-insensitive.
+
+    :param file_path: Path to the file to check.
+    :return: True if the file exists and ends with .jpg or .jpeg, False otherwise.
+    """
+    return os.path.isfile(file_path) and file_path.lower().endswith(('.jpg', '.jpeg'))
+
 def zoom(img, zoom_factor):
     """
     Zoom into the image without increasing the final output size.
@@ -221,6 +230,10 @@ def main():
     for path in file_paths:
         if not os.path.isfile(path):
             print(f"{Fore.RED}Error: {path} is not a file{Style.RESET_ALL}")
+            continue
+
+        if not is_jpg(path):
+            print(f"{Fore.RED}Error {path}: not a JPG file{Style.RESET_ALL}")
             continue
 
         base_no_ext = os.path.splitext(path)[0]
