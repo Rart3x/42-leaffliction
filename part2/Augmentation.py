@@ -1,8 +1,18 @@
+import argparse
+import glob
 import os
-import sys
 
 from colorama import Fore, Style
 from PIL import Image, ImageEnhance, ImageFilter
+
+g_suffixes = {
+    "_blurred",
+    "_scaled",
+    "_contrasted",
+    "_illuminated",
+    "_rotated",
+    "_projected"
+}
 
 
 def zoom(img, zoom_factor):
@@ -40,7 +50,7 @@ class Augmentation:
     such as rotation, blur, contrast enhancement, illumination, scaling,
     and projective transformation.
     """
-    def __init__(self, p_path: str):
+    def __init__(self, p_path: str, p_visual_mode: bool = False):
         """
         Constructor. Loads the image and applies all augmentations.
 
@@ -53,6 +63,7 @@ class Augmentation:
             0.004, 0.004
         ]
 
+        self.visual_mode = p_visual_mode
         self.path = p_path
         self.path_without_extension = os.path.splitext(p_path)[0]
         self.img = Image.open(self.path)
@@ -183,29 +194,43 @@ class Augmentation:
         self.projective()
 
         # Display the final collage
-        collage.show()
+        if self.visual_mode:
+            collage.show()
 
 
 def main():
-    """
-    Main function
-    """
-    if len(sys.argv) != 2:
-        print(f"{Fore.RED}"
-              f"Usage: python augmentation.py file_path"
-              f"{Style.RESET_ALL}")
+    parser = argparse.ArgumentParser(prog='Augmentation')
+
+    parser.add_argument(
+        '-v', '--visual',
+        action='store_true',
+        help='Enable the rendering of the augmented images'
+    )
+
+    v_args, v_remaining = parser.parse_known_args()
+
+    file_paths = []
+
+    for arg in v_remaining:
+        file_paths.extend(glob.glob(arg))
+
+    if not file_paths:
+        print(f"{Fore.RED}No valid file paths provided.{Style.RESET_ALL}")
         return
 
-    if not os.path.isfile(sys.argv[1]):
-        print(f"{Fore.RED}"
-              f"Error: argument must be a file path"
-              f"{Style.RESET_ALL}")
-        return
+    for path in file_paths:
+        if not os.path.isfile(path):
+            print(f"{Fore.RED}Error: {path} is not a file{Style.RESET_ALL}")
+            continue
 
-    v_path = sys.argv[1]
+        base_no_ext = os.path.splitext(path)[0]
 
-    v_augmentation = Augmentation(v_path)
-    v_augmentation.show_all()
+        # Skip already augmented images
+        if any(base_no_ext.endswith(sfx) for sfx in g_suffixes):
+            continue
+
+        aug = Augmentation(path, v_args.visual)
+        aug.show_all()
 
 
 if __name__ == '__main__':
