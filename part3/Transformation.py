@@ -30,12 +30,33 @@ class Transformation:
     def __del__(self):
         pass
 
+    def gauss(self):
+        v_gauss = pcv.gaussian_blur(img=self.img, ksize=(21,21), sigma_x=0, sigma_y=0)
+        plt.imshow(v_gauss)
+        plt.show()
+    
+    def mask(self):
+        v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
+        v_mask_binary = pcv.threshold.binary(gray_img=v_hsv, threshold=85, 
+                                            object_type='light')
+        v_masked = pcv.apply_mask(img=self.img, mask=v_mask_binary, mask_color='white')
+        
+        plt.imshow(v_masked)
+        plt.show()
+
+    def roi(self):
+        v_roi = pcv.roi.custom(img=self.img, vertices=[[1190,490], [1470,830], 
+                                        [1565,1460], [1130,1620], 
+                                        [920,1430], [890,950]])
+        plt.imshow(v_roi)
+        plt.show()
+
     def show(self):
         plt.imshow(self.img)
         plt.show()
 
 
-def process_image(p_path: str):
+def process_image(p_path: str, p_type: str):
     if not os.path.isfile(p_path):
         print("Need to be a file")
         sys.exit(1)
@@ -47,7 +68,7 @@ def process_image(p_path: str):
     return
 
 
-def process_folder(p_src: str, p_dst: str):
+def process_folder(p_src: str, p_dst: str, p_type: str):
     if not os.path.isdir(p_src):
         print("src existe pas")
         sys.exit(1)
@@ -78,16 +99,23 @@ def main():
                        help='Source directory containing images')
     parser.add_argument('-dst', '--destination', 
                        help='Destination directory for saving transformations')
+    parser.add_argument('-t', '--type', 
+                        choices=['gauss', 'mask', 'roi', 'analyze_obj'
+                                 , 'pseudolandmarks', 'color_histogram'])
     args = parser.parse_args()
     v_is_folder = args.source or args.destination
     v_is_image = args.image_path
+    v_type = args.type
+    if not v_type:
+        print("choisis un type")
+        sys.exit(1)
     if v_is_image and v_is_folder:
         print("Choisis l'un des deux en faites")
         sys.exit(1)
     if v_is_image:
-        process_image(args.image_path)
-    elif v_is_folder:
-        process_folder(args.source, args.destination)
+        process_image(args.image_path, v_type)
+    elif v_is_folder and args.source and args.destination:
+        process_folder(args.source, args.destination, v_type)
 
 
 if __name__ == '__main__':
