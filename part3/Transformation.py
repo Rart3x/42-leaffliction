@@ -101,6 +101,7 @@ class Transformation:
         self.img_masked = None
         self.img_analyzed = None
         self.img_pseudolandmarks = None
+        self.img_color_histogram = None
 
     def __del__(self):
         """
@@ -112,16 +113,17 @@ class Transformation:
         """
         Executes the transformation corresponding to the provided type.
         """
+        self.gauss()
+        self.roi()
+        self.mask()
+        self.analyze()
+        self.pseudo_landmarks()
+        self.color_histogram()
         try:
-            self.gauss()
-            self.roi()
-            self.mask()
-            # TODO: implement other cases
-            return
+            pass
         except Exception as e:
             print(f"{Fore.RED}Error: Processing failed for file: "
                   f"{self.path}: {e}{Style.RESET_ALL}")
-            return
 
     def gauss(self):
         """
@@ -172,7 +174,106 @@ class Transformation:
             plt.title('Automatic ROI Detection')
             plt.show()
 
+
+    def analyze(self):
+        v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
+        v_mask_binary = pcv.threshold.binary(
+            gray_img=v_hsv, threshold=85, object_type='light')
+        shape_image = pcv.analyze.size(img=self.img, labeled_mask=v_mask_binary, label="")
+        self.img_analyzed = shape_image.copy()
+
+
+    def pseudo_landmarks(self):
+        """
+        Detects and draws pseudo-landmarks on the image using homology analysis.
+        """
+        v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
+        v_mask_binary = pcv.threshold.binary(
+            gray_img=v_hsv, threshold=85, object_type='light')
+        left, right, center_h = pcv.homology.y_axis_pseudolandmarks(
+            img=self.img, mask=v_mask_binary)
+        
+        self.img_pseudolandmarks = self.img.copy()
+        
+        for point in left:
+            pt = tuple(map(int, point[0]))
+            cv2.circle(self.img_pseudolandmarks, pt, 5, (255, 0, 0), -1)
+        
+        for point in right:
+            pt = tuple(map(int, point[0]))
+            cv2.circle(self.img_pseudolandmarks, pt, 5, (0, 255, 0), -1)
+        
+        for point in center_h:
+            pt = tuple(map(int, point[0]))
+            cv2.circle(self.img_pseudolandmarks, pt, 5, (0, 0, 255), -1)
+        
+        if self.visual:
+            plt.imshow(cv2.cvtColor(self.img_pseudolandmarks, cv2.COLOR_BGR2RGB))
+            plt.title('Pseudo-landmarks (Blue: Left, Green: Right, Red: Center)')
+            plt.show()
+
     
+    def color_histogram(self):
+        """
+        Analyzes and displays color histograms for RGB, LAB, and HSV color spaces.
+        """
+        v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
+        v_mask_binary = pcv.threshold.binary(
+            gray_img=v_hsv, threshold=85, object_type='light')
+        
+        # Create histograms for each channel manually
+        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        
+        # RGB histogram
+        colors = ('b', 'g', 'r')
+        for i, color in enumerate(colors):
+            hist = cv2.calcHist([self.img], [i], v_mask_binary, [256], [0, 256])
+            axes[0].plot(hist, color=color)
+        axes[0].set_title('RGB Histogram')
+        axes[0].set_xlabel('Pixel Value')
+        axes[0].set_ylabel('Frequency')
+        
+        # LAB histogram
+        lab_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2LAB)
+        colors_lab = ('gray', 'green', 'red')
+        labels_lab = ('L', 'A', 'B')
+        for i, (color, label) in enumerate(zip(colors_lab, labels_lab)):
+            hist = cv2.calcHist([lab_img], [i], v_mask_binary, [256], [0, 256])
+            axes[1].plot(hist, color=color, label=label)
+        axes[1].set_title('LAB Histogram')
+        axes[1].set_xlabel('Pixel Value')
+        axes[1].set_ylabel('Frequency')
+        axes[1].legend()
+        
+        # HSV histogram
+        hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
+        colors_hsv = ('orange', 'purple', 'cyan')
+        labels_hsv = ('H', 'S', 'V')
+        for i, (color, label) in enumerate(zip(colors_hsv, labels_hsv)):
+            hist = cv2.calcHist([hsv_img], [i], v_mask_binary, [256], [0, 256])
+            axes[2].plot(hist, color=color, label=label)
+        axes[2].set_title('HSV Histogram')
+        axes[2].set_xlabel('Pixel Value')
+        axes[2].set_ylabel('Frequency')
+        axes[2].legend()
+        
+        plt.tight_layout()
+        
+        # Convert figure to image array
+        fig.canvas.draw()
+        width, height = fig.canvas.get_width_height()
+        buf = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
+        buf = buf.reshape(height, width, 4)
+        
+        # Convert RGBA to BGR for OpenCV
+        self.img_color_histogram = cv2.cvtColor(buf, cv2.COLOR_RGBA2BGR)
+        
+        if self.visual:
+            plt.show()
+        else:
+            plt.close(fig)
+
+
     def save(self, p_dst: str):
         """
         Saves all transformed images to the destination directory.
@@ -186,6 +287,7 @@ class Transformation:
             (self.img_roi, "_ROI_detection"),
             (self.img_analyzed, "_analyzed_objects"),
             (self.img_pseudolandmarks, "_pseudolandmarks"),
+            (self.img_color_histogram, "_color_histogram"),
         ]
 
         base_name = os.path.splitext(self.filename)[0]
@@ -213,6 +315,7 @@ class Transformation:
             (self.img_roi, "ROI Detection"),
             (self.img_analyzed, "Analyzed Objects"),
             (self.img_pseudolandmarks, "Pseudolandmarks"),
+            (self.img_color_histogram, "Pixel Intensity")
         ]
 
         # Keep only valid images
