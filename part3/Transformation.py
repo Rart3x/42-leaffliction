@@ -67,7 +67,6 @@ def parse_input():
 
     parser.add_argument(
         '-dst', '--destination',
-        required=True,
         help='Destination directory for saving transformations'
     )
 
@@ -173,6 +172,33 @@ class Transformation:
             plt.title('Automatic ROI Detection')
             plt.show()
 
+    
+    def save(self, p_dst: str):
+        """
+        Saves all transformed images to the destination directory.
+        
+        :param p_dst: Destination directory path where images will be saved.
+        """
+        images = [
+            (self.img, "_original"),
+            (self.img_gauss, "_gaussian_blur"),
+            (self.img_masked, "_mask_applied"),
+            (self.img_roi, "_ROI_detection"),
+            (self.img_analyzed, "_analyzed_objects"),
+            (self.img_pseudolandmarks, "_pseudolandmarks"),
+        ]
+
+        base_name = os.path.splitext(self.filename)[0]
+
+        for img, suffix in images:
+            if img is not None:
+                output_path = os.path.join(p_dst, f"{base_name}{suffix}.jpg")
+                try:
+                    cv2.imwrite(output_path, img)
+                    print(f"{Fore.GREEN}Saved: {output_path}{Style.RESET_ALL}")
+                except Exception as e:
+                    print(f"{Fore.RED}Error saving {output_path}: {e}{Style.RESET_ALL}")
+
     def show_all(self):
         """
         Displays all available transformed images in a single figure
@@ -247,6 +273,9 @@ def main():
 
     if os.path.isdir(v_path):
         # Collect all JPG images in the directory
+        if not v_args.destination:
+            print(f"{Fore.RED}Error: provide destination when it's a folder{Style.RESET_ALL}")
+            return
         v_list = folder(v_path, v_args.destination, p_type=None)
         if not v_list:
             print(f"{Fore.RED}Error: empty directory{Style.RESET_ALL}")
@@ -256,9 +285,11 @@ def main():
         for element in v_list:
             v_transformation = Transformation(element, v_args.visual)
             v_transformation.image()
-            v_transformation.show_all()
+            v_transformation.save(v_args.destination)
 
     elif os.path.isfile(v_path):
+        if v_args.destination:
+            print(f"{Fore.YELLOW}WARNING: destination path won't be used{Style.RESET_ALL}")
         if not is_jpg(v_path):
             print(f"{Fore.RED}Error: argument needs to be a "
                   f"jpg/jpeg{Style.RESET_ALL}")
