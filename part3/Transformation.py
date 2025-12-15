@@ -174,22 +174,26 @@ class Transformation:
             plt.title('Automatic ROI Detection')
             plt.show()
 
-
     def analyze(self):
         v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
         v_mask_binary = pcv.threshold.binary(
             gray_img=v_hsv, threshold=85, object_type='light')
-        shape_image = pcv.analyze.size(img=self.img, labeled_mask=v_mask_binary, label="")
+        shape_image = (pcv.analyze.size(
+            img=self.img,
+            labeled_mask=v_mask_binary,
+            label=""))
         self.img_analyzed = shape_image.copy()
-
 
     def pseudo_landmarks(self):
         """
-        Detects and draws pseudo-landmarks on the image using homology analysis.
+        Detects and draws pseudo-landmarks
+            on the image using homology analysis.
         """
         v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
         v_mask_binary = pcv.threshold.binary(
-            gray_img=v_hsv, threshold=85, object_type='light')
+            gray_img=v_hsv,
+            threshold=85,
+            object_type='light')
         left, right, center_h = pcv.homology.y_axis_pseudolandmarks(
             img=self.img, mask=v_mask_binary)
 
@@ -208,14 +212,16 @@ class Transformation:
             cv2.circle(self.img_pseudolandmarks, pt, 5, (0, 0, 255), -1)
 
         if self.visual:
-            plt.imshow(cv2.cvtColor(self.img_pseudolandmarks, cv2.COLOR_BGR2RGB))
-            plt.title('Pseudo-landmarks (Blue: Left, Green: Right, Red: Center)')
+            plt.imshow(cv2.cvtColor(self.img_pseudolandmarks,
+                                    cv2.COLOR_BGR2RGB))
+            plt.title('Pseudo-landmarks'
+                      '(Blue: Left, Green: Right, Red: Center)')
             plt.show()
-
 
     def color_histogram(self):
         """
-        Analyzes and displays color histograms for RGB, LAB, and HSV color spaces.
+        Analyzes and displays color histograms
+            for RGB, LAB, and HSV color spaces.
         """
         v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
         v_mask_binary = pcv.threshold.binary(
@@ -227,7 +233,11 @@ class Transformation:
         # RGB histogram
         colors = ('b', 'g', 'r')
         for i, color in enumerate(colors):
-            hist = cv2.calcHist([self.img], [i], v_mask_binary, [256], [0, 256])
+            hist = cv2.calcHist([self.img],
+                                [i],
+                                v_mask_binary,
+                                [256],
+                                [0, 256])
             axes[0].plot(hist, color=color)
         axes[0].set_title('RGB Histogram')
         axes[0].set_xlabel('Pixel Value')
@@ -273,7 +283,6 @@ class Transformation:
         else:
             plt.close(fig)
 
-
     def save(self, p_dst: str):
         """
         Saves all transformed images to the destination directory.
@@ -299,7 +308,9 @@ class Transformation:
                     cv2.imwrite(output_path, img)
                     print(f"{Fore.GREEN}Saved: {output_path}{Style.RESET_ALL}")
                 except Exception as e:
-                    print(f"{Fore.RED}Error saving {output_path}: {e}{Style.RESET_ALL}")
+                    print(f"{Fore.RED}"
+                          f"Error saving {output_path}: {e}"
+                          f"{Style.RESET_ALL}")
 
     def show_all(self):
         """
@@ -377,7 +388,9 @@ def main():
     if os.path.isdir(v_path):
         # Collect all JPG images in the directory
         if not v_args.destination:
-            print(f"{Fore.RED}Error: provide destination when it's a folder{Style.RESET_ALL}")
+            print(f"{Fore.RED}"
+                  f"Error: provide destination when it's a folder"
+                  f"{Style.RESET_ALL}")
             return
         v_list = folder(v_path, v_args.destination, p_type=None)
         if not v_list:
@@ -392,7 +405,9 @@ def main():
 
     elif os.path.isfile(v_path):
         if v_args.destination:
-            print(f"{Fore.YELLOW}WARNING: destination path won't be used{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}"
+                  f"WARNING: destination path won't be used"
+                  f"{Style.RESET_ALL}")
         if not is_jpg(v_path):
             print(f"{Fore.RED}Error: argument needs to be a "
                   f"jpg/jpeg{Style.RESET_ALL}")
