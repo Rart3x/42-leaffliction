@@ -9,40 +9,9 @@ import numpy as np
 import os
 
 
-def folder(p_src: str, p_dst: str, p_type: str):
-    """
-    Collects all JPG/JPEG images from a source directory and ensures the
-    destination directory exists.
-
-    :param p_src: Source directory containing images.
-    :param p_dst: Destination directory for saving transformations.
-    :param p_type: Type of processing (used for logging or future use).
-    :return: List of absolute file paths to JPG images in the source directory.
-    """
-    if not os.path.isdir(p_dst):
-        try:
-            os.makedirs(p_dst)
-        except Exception as e:
-            print(f"{Fore.RED}Error: destination folder can't be "
-                  f"created: {e}{Style.RESET_ALL}")
-            return []
-
-    jpg_files = [
-        os.path.abspath(os.path.join(p_src, f))
-        for f in os.listdir(p_src)
-        if is_jpg(os.path.join(p_src, f))
-        and os.path.isfile(os.path.join(p_src, f))
-    ]
-
-    return jpg_files
-
-
 def is_jpg(path: str) -> bool:
     """
     Checks if the given file is a valid JPG/JPEG image.
-
-    :param path: Path to the image file.
-    :return: True if the file exists and is a JPEG image, False otherwise.
     """
     try:
         with Image.open(path) as img:
@@ -51,67 +20,77 @@ def is_jpg(path: str) -> bool:
         return False
 
 
+def folder(src: str, dst: str) -> list[str]:
+    """
+    Collects all JPG/JPEG images from a source directory and ensures
+    the destination directory exists.
+    """
+    if not os.path.isdir(dst):
+        try:
+            os.makedirs(dst)
+        except OSError as exc:
+            print(
+                f"{Fore.RED}Error: destination folder can't be created: "
+                f"{exc}{Style.RESET_ALL}"
+            )
+            return []
+
+    return [
+        os.path.abspath(os.path.join(src, file))
+        for file in os.listdir(src)
+        if os.path.isfile(os.path.join(src, file))
+        and is_jpg(os.path.join(src, file))
+    ]
+
+
 def parse_input():
     """
-    Parses command-line arguments, including input path, destination folder,
-    processing types, and visual flag.
-
-    :return: Tuple containing:
-             - v_path (str): Path to input image or directory.
-             - v_args (argparse.Namespace): Full namespace with all options.
+    Parses command-line arguments.
     """
-    parser = argparse.ArgumentParser(prog='Augmentation')
-
-    parser.add_argument('image_path', nargs='?',
-                        help='Direct path to a single image file')
+    parser = argparse.ArgumentParser(prog="Augmentation")
 
     parser.add_argument(
-        '-dst', '--destination',
-        help='Destination directory for saving transformations'
+        "image_path",
+        nargs="?",
+        help="Path to a single image file or a directory",
     )
 
-    parser.add_argument('-v', '--visual', action='store_true',
-                        help='Enable visual rendering')
+    parser.add_argument(
+        "-dst",
+        "--destination",
+        help="Destination directory for saving transformations",
+    )
 
-    v_args = parser.parse_args()
-    v_path = v_args.image_path
+    parser.add_argument(
+        "-v",
+        "--visual",
+        action="store_true",
+        help="Enable visual rendering",
+    )
 
-    return v_path, v_args
+    args = parser.parse_args()
+    return args.image_path, args
 
 
 class Transformation:
     """
-    Class representing a single image transformation,
-    with optional visual output.
+    Represents an image transformation pipeline.
     """
-    def __init__(self, p_path: str, p_visual: bool):
-        """
-        Constructor: Loads the image and initializes placeholders
-        for transformation outputs.
 
-        :param p_path: Path to the image file.
-        :param p_visual: Boolean flag to display images visually
-                         during processing.
-        """
-        self.img, self.path, self.filename = pcv.readimage(p_path)
-        self.visual = p_visual
+    def __init__(self, path: str, visual: bool):
+        self.img, self.path, self.filename = pcv.readimage(path)
+        self.visual = visual
 
-        self.img_roi = None
         self.img_gauss = None
+        self.img_roi = None
         self.img_masked = None
         self.img_analyzed = None
         self.img_pseudolandmarks = None
         self.img_color_histogram = None
 
-    def __del__(self):
-        """
-        Destructor for Transformation.
-        """
-        pass
-
     def image(self):
         """
-        Executes the transformation corresponding to the provided type.
+        Runs all transformations.
         """
         self.gauss()
         self.roi()
@@ -119,18 +98,14 @@ class Transformation:
         self.analyze()
         self.pseudo_landmarks()
         self.color_histogram()
-        try:
-            pass
-        except Exception as e:
-            print(f"{Fore.RED}Error: Processing failed for file: "
-                  f"{self.path}: {e}{Style.RESET_ALL}")
 
     def gauss(self):
-        """
-        Applies Gaussian blur to the image.
-        """
-        self.img_gauss = pcv.gaussian_blur(img=self.img, ksize=(21, 21),
-                                           sigma_x=0, sigma_y=0)
+        self.img_gauss = pcv.gaussian_blur(
+            img=self.img,
+            ksize=(21, 21),
+            sigma_x=0,
+            sigma_y=0,
+        )
 
         if self.visual:
             plt.imshow(self.img_gauss)
@@ -138,14 +113,18 @@ class Transformation:
             plt.show()
 
     def mask(self):
-        """
-        Applies a binary mask based on the saturation channel of the image.
-        """
-        v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
-        v_mask_binary = pcv.threshold.binary(
-            gray_img=v_hsv, threshold=85, object_type='light')
+        hsv = pcv.rgb2gray_hsv(self.img, channel="s")
+        mask = pcv.threshold.binary(
+            gray_img=hsv,
+            threshold=85,
+            object_type="light",
+        )
+
         self.img_masked = pcv.apply_mask(
-            img=self.img, mask=v_mask_binary, mask_color='white')
+            img=self.img,
+            mask=mask,
+            mask_color="white",
+        )
 
         if self.visual:
             plt.imshow(self.img_masked)
@@ -153,260 +132,226 @@ class Transformation:
             plt.show()
 
     def roi(self):
-        """
-        Detects Regions of Interest (ROI) using the 'a' channel
-        of LAB colorspace. Draws contours on the image.
-        """
-        v_gray = pcv.rgb2gray_lab(rgb_img=self.img, channel='a')
-        v_mask = pcv.threshold.binary(
-            gray_img=v_gray, threshold=100, object_type='light')
-        v_roi = pcv.roi.from_binary_image(img=self.img, bin_img=v_mask)
+        gray = pcv.rgb2gray_lab(self.img, channel="a")
+        mask = pcv.threshold.binary(
+            gray_img=gray,
+            threshold=100,
+            object_type="light",
+        )
+
+        roi = pcv.roi.from_binary_image(
+            img=self.img,
+            bin_img=mask,
+        )
 
         self.img_roi = self.img.copy()
 
-        for contour in v_roi.contours:
-            if isinstance(contour, tuple):
-                contour = list(contour)
-            cv2.drawContours(self.img_roi, contour, -1, (255, 0, 0), 3)
+        for contour in roi.contours:
+            cv2.drawContours(
+                self.img_roi,
+                contour,
+                -1,
+                (255, 0, 0),
+                3,
+            )
 
         if self.visual:
-            plt.imshow(cv2.cvtColor(self.img_roi, cv2.COLOR_BGR2RGB))
-            plt.title('Automatic ROI Detection')
+            plt.imshow(
+                cv2.cvtColor(self.img_roi, cv2.COLOR_BGR2RGB)
+            )
+            plt.title("Automatic ROI Detection")
             plt.show()
-
 
     def analyze(self):
-        v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
-        v_mask_binary = pcv.threshold.binary(
-            gray_img=v_hsv, threshold=85, object_type='light')
-        shape_image = pcv.analyze.size(img=self.img, labeled_mask=v_mask_binary, label="")
-        self.img_analyzed = shape_image.copy()
+        hsv = pcv.rgb2gray_hsv(self.img, channel="s")
+        mask = pcv.threshold.binary(
+            gray_img=hsv,
+            threshold=85,
+            object_type="light",
+        )
 
+        analyzed = pcv.analyze.size(
+            img=self.img,
+            labeled_mask=mask,
+            label="",
+        )
+
+        self.img_analyzed = analyzed.copy()
 
     def pseudo_landmarks(self):
-        """
-        Detects and draws pseudo-landmarks on the image using homology analysis.
-        """
-        v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
-        v_mask_binary = pcv.threshold.binary(
-            gray_img=v_hsv, threshold=85, object_type='light')
-        left, right, center_h = pcv.homology.y_axis_pseudolandmarks(
-            img=self.img, mask=v_mask_binary)
-        
+        hsv = pcv.rgb2gray_hsv(self.img, channel="s")
+        mask = pcv.threshold.binary(
+            gray_img=hsv,
+            threshold=85,
+            object_type="light",
+        )
+
+        left, right, center = pcv.homology.y_axis_pseudolandmarks(
+            img=self.img,
+            mask=mask,
+        )
+
         self.img_pseudolandmarks = self.img.copy()
-        
-        for point in left:
-            pt = tuple(map(int, point[0]))
-            cv2.circle(self.img_pseudolandmarks, pt, 5, (255, 0, 0), -1)
-        
-        for point in right:
-            pt = tuple(map(int, point[0]))
-            cv2.circle(self.img_pseudolandmarks, pt, 5, (0, 255, 0), -1)
-        
-        for point in center_h:
-            pt = tuple(map(int, point[0]))
-            cv2.circle(self.img_pseudolandmarks, pt, 5, (0, 0, 255), -1)
-        
+
+        for group, color in (
+            (left, (255, 0, 0)),
+            (right, (0, 255, 0)),
+            (center, (0, 0, 255)),
+        ):
+            for point in group:
+                x, y = map(int, point[0])
+                cv2.circle(
+                    self.img_pseudolandmarks,
+                    (x, y),
+                    5,
+                    color,
+                    -1,
+                )
+
         if self.visual:
-            plt.imshow(cv2.cvtColor(self.img_pseudolandmarks, cv2.COLOR_BGR2RGB))
-            plt.title('Pseudo-landmarks (Blue: Left, Green: Right, Red: Center)')
+            plt.imshow(
+                cv2.cvtColor(
+                    self.img_pseudolandmarks,
+                    cv2.COLOR_BGR2RGB,
+                )
+            )
+            plt.title(
+                "Pseudo-landmarks (Blue: Left, Green: Right, Red: Center)"
+            )
             plt.show()
 
-    
     def color_histogram(self):
-        """
-        Analyzes and displays color histograms for RGB, LAB, and HSV color spaces.
-        """
-        v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
-        v_mask_binary = pcv.threshold.binary(
-            gray_img=v_hsv, threshold=85, object_type='light')
-        
-        # Create histograms for each channel manually
+        hsv = pcv.rgb2gray_hsv(self.img, channel="s")
+        mask = pcv.threshold.binary(
+            gray_img=hsv,
+            threshold=85,
+            object_type="light",
+        )
+
         fig, axes = plt.subplots(1, 3, figsize=(15, 5))
-        
-        # RGB histogram
-        colors = ('b', 'g', 'r')
-        for i, color in enumerate(colors):
-            hist = cv2.calcHist([self.img], [i], v_mask_binary, [256], [0, 256])
+
+        for i, color in enumerate(("b", "g", "r")):
+            hist = cv2.calcHist(
+                [self.img],
+                [i],
+                mask,
+                [256],
+                [0, 256],
+            )
             axes[0].plot(hist, color=color)
-        axes[0].set_title('RGB Histogram')
-        axes[0].set_xlabel('Pixel Value')
-        axes[0].set_ylabel('Frequency')
-        
-        # LAB histogram
-        lab_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2LAB)
-        colors_lab = ('gray', 'green', 'red')
-        labels_lab = ('L', 'A', 'B')
-        for i, (color, label) in enumerate(zip(colors_lab, labels_lab)):
-            hist = cv2.calcHist([lab_img], [i], v_mask_binary, [256], [0, 256])
-            axes[1].plot(hist, color=color, label=label)
-        axes[1].set_title('LAB Histogram')
-        axes[1].set_xlabel('Pixel Value')
-        axes[1].set_ylabel('Frequency')
+
+        axes[0].set_title("RGB Histogram")
+
+        lab = cv2.cvtColor(self.img, cv2.COLOR_BGR2LAB)
+        for i, label in enumerate(("L", "A", "B")):
+            hist = cv2.calcHist(
+                [lab],
+                [i],
+                mask,
+                [256],
+                [0, 256],
+            )
+            axes[1].plot(hist, label=label)
+
+        axes[1].set_title("LAB Histogram")
         axes[1].legend()
-        
-        # HSV histogram
+
         hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
-        colors_hsv = ('orange', 'purple', 'cyan')
-        labels_hsv = ('H', 'S', 'V')
-        for i, (color, label) in enumerate(zip(colors_hsv, labels_hsv)):
-            hist = cv2.calcHist([hsv_img], [i], v_mask_binary, [256], [0, 256])
-            axes[2].plot(hist, color=color, label=label)
-        axes[2].set_title('HSV Histogram')
-        axes[2].set_xlabel('Pixel Value')
-        axes[2].set_ylabel('Frequency')
+        for i, label in enumerate(("H", "S", "V")):
+            hist = cv2.calcHist(
+                [hsv_img],
+                [i],
+                mask,
+                [256],
+                [0, 256],
+            )
+            axes[2].plot(hist, label=label)
+
+        axes[2].set_title("HSV Histogram")
         axes[2].legend()
-        
+
         plt.tight_layout()
-        
-        # Convert figure to image array
         fig.canvas.draw()
+
+        buf = np.frombuffer(
+            fig.canvas.buffer_rgba(),
+            dtype=np.uint8,
+        )
+
         width, height = fig.canvas.get_width_height()
-        buf = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
         buf = buf.reshape(height, width, 4)
-        
-        # Convert RGBA to BGR for OpenCV
-        self.img_color_histogram = cv2.cvtColor(buf, cv2.COLOR_RGBA2BGR)
-        
+
+        self.img_color_histogram = cv2.cvtColor(
+            buf,
+            cv2.COLOR_RGBA2BGR,
+        )
+
         if self.visual:
             plt.show()
         else:
             plt.close(fig)
 
-
-    def save(self, p_dst: str):
-        """
-        Saves all transformed images to the destination directory.
-        
-        :param p_dst: Destination directory path where images will be saved.
-        """
+    def save(self, dst: str):
         images = [
             (self.img, "_original"),
             (self.img_gauss, "_gaussian_blur"),
-            (self.img_masked, "_mask_applied"),
-            (self.img_roi, "_ROI_detection"),
-            (self.img_analyzed, "_analyzed_objects"),
+            (self.img_masked, "_mask"),
+            (self.img_roi, "_roi"),
+            (self.img_analyzed, "_analyzed"),
             (self.img_pseudolandmarks, "_pseudolandmarks"),
-            (self.img_color_histogram, "_color_histogram"),
+            (self.img_color_histogram, "_histogram"),
         ]
 
-        base_name = os.path.splitext(self.filename)[0]
+        base = os.path.splitext(self.filename)[0]
 
         for img, suffix in images:
-            if img is not None:
-                output_path = os.path.join(p_dst, f"{base_name}{suffix}.jpg")
-                try:
-                    cv2.imwrite(output_path, img)
-                    print(f"{Fore.GREEN}Saved: {output_path}{Style.RESET_ALL}")
-                except Exception as e:
-                    print(f"{Fore.RED}Error saving {output_path}: {e}{Style.RESET_ALL}")
+            if img is None:
+                continue
 
-    def show_all(self):
-        """
-        Displays all available transformed images in a single figure
-        with subplots. Click on an image to open it in a separate
-        interactive window.
-        """
-        # Collect all images and titles
-        images = [
-            (self.img, "Original"),
-            (self.img_gauss, "Gaussian Blur"),
-            (self.img_masked, "Mask Applied"),
-            (self.img_roi, "ROI Detection"),
-            (self.img_analyzed, "Analyzed Objects"),
-            (self.img_pseudolandmarks, "Pseudolandmarks"),
-            (self.img_color_histogram, "Pixel Intensity")
-        ]
-
-        # Keep only valid images
-        images = [(img, title) for img, title in images if img is not None]
-
-        n = len(images)
-
-        if n == 0:
-            print("No images to display")
-            return
-
-        # Create subplots
-        fig, axes = plt.subplots(1, n, figsize=(5 * n, 5))
-        if n == 1:
-            axes = [axes]
-
-        # Display each image in a subplot
-        for ax, (img, title) in zip(axes, images):
-            if isinstance(img, np.ndarray):
-                img_disp = (cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                            if img.ndim == 3 and img.shape[-1] == 3
-                            else img)
-            else:
-                img_disp = img
-            ax.imshow(img_disp)
-            ax.set_title(title)
-            ax.axis('off')
-
-        # Function to open image in a new window on click
-        def onclick(event):
-            for i, ax in enumerate(axes):
-                if ax == event.inaxes:
-                    img, title = images[i]
-                    plt.figure(figsize=(6, 6))
-                    if isinstance(img, np.ndarray):
-                        img_disp = (cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                                    if img.ndim == 3 and img.shape[-1] == 3
-                                    else img)
-                    else:
-                        img_disp = img
-                    plt.imshow(img_disp)
-                    plt.title(title)
-                    plt.axis('off')
-                    plt.show()
-                    break
-
-        fig.canvas.mpl_connect('button_press_event', onclick)
-        plt.show()
+            path = os.path.join(dst, f"{base}{suffix}.jpg")
+            cv2.imwrite(path, img)
+            print(f"{Fore.GREEN}Saved: {path}{Style.RESET_ALL}")
 
 
 def main():
-    """
-    Main entry point of the script.
-    Parses input arguments, iterates over images, applies requested
-    transformations, and displays all results.
-    """
-    v_path, v_args = parse_input()
+    path, args = parse_input()
 
-    if os.path.isdir(v_path):
-        # Collect all JPG images in the directory
-        if not v_args.destination:
-            print(f"{Fore.RED}Error: provide destination when it's a folder{Style.RESET_ALL}")
+    if not path:
+        print(f"{Fore.RED}Error: no input path provided{Style.RESET_ALL}")
+        return
+
+    if os.path.isdir(path):
+        if not args.destination:
+            print(
+                f"{Fore.RED}Error: destination required for folders"
+                f"{Style.RESET_ALL}"
+            )
             return
-        v_list = folder(v_path, v_args.destination, p_type=None)
-        if not v_list:
+
+        files = folder(path, args.destination)
+        if not files:
             print(f"{Fore.RED}Error: empty directory{Style.RESET_ALL}")
             return
 
-        # Process each image
-        for element in v_list:
-            v_transformation = Transformation(element, v_args.visual)
-            v_transformation.image()
-            v_transformation.save(v_args.destination)
+        for file in files:
+            transform = Transformation(file, args.visual)
+            transform.image()
+            transform.save(args.destination)
 
-    elif os.path.isfile(v_path):
-        if v_args.destination:
-            print(f"{Fore.YELLOW}WARNING: destination path won't be used{Style.RESET_ALL}")
-        if not is_jpg(v_path):
-            print(f"{Fore.RED}Error: argument needs to be a "
-                  f"jpg/jpeg{Style.RESET_ALL}")
+    elif os.path.isfile(path):
+        if not is_jpg(path):
+            print(
+                f"{Fore.RED}Error: input must be JPG/JPEG{Style.RESET_ALL}"
+            )
             return
 
-        # Process single image
-        v_transformation = Transformation(v_path, v_args.visual)
-        v_transformation.image()
-        v_transformation.show_all()
+        transform = Transformation(path, args.visual)
+        transform.image()
+        transform.color_histogram()
 
     else:
-        print(f"{Fore.RED}Error: Provided path does not exist"
-              f"{Style.RESET_ALL}")
+        print(f"{Fore.RED}Error: invalid path{Style.RESET_ALL}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
