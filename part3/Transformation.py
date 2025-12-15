@@ -220,63 +220,99 @@ class Transformation:
 
     def color_histogram(self):
         """
-        Analyzes and displays color histograms
-            for RGB, LAB, and HSV color spaces.
+        Analyzes and displays color histograms for RGB, LAB and HSV
+        in a single combined plot.
         """
-        v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
-        v_mask_binary = pcv.threshold.binary(
-            gray_img=v_hsv, threshold=85, object_type='light')
+        hsv_gray = pcv.rgb2gray_hsv(
+            rgb_img=self.img,
+            channel="s",
+        )
 
-        # Create histograms for each channel manually
-        fig, axes = plt.subplots(1, 3, figsize=(15, 5))
+        mask = pcv.threshold.binary(
+            gray_img=hsv_gray,
+            threshold=85,
+            object_type="light",
+        )
 
-        # RGB histogram
-        colors = ('b', 'g', 'r')
-        for i, color in enumerate(colors):
-            hist = cv2.calcHist([self.img],
-                                [i],
-                                v_mask_binary,
-                                [256],
-                                [0, 256])
-            axes[0].plot(hist, color=color)
-        axes[0].set_title('RGB Histogram')
-        axes[0].set_xlabel('Pixel Value')
-        axes[0].set_ylabel('Frequency')
+        fig, ax = plt.subplots(figsize=(12, 6))
 
-        # LAB histogram
+        # --- RGB ---
+        rgb_colors = ("b", "g", "r")
+        rgb_labels = ("R", "G", "B")
+
+        for i, (color, label) in enumerate(zip(rgb_colors, rgb_labels)):
+            hist = cv2.calcHist(
+                [self.img],
+                [i],
+                mask,
+                [256],
+                [0, 256],
+            )
+            ax.plot(
+                hist,
+                color=color,
+                linestyle="-",
+                label=f"RGB-{label}",
+            )
+
+        # --- LAB ---
         lab_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2LAB)
-        colors_lab = ('gray', 'green', 'red')
-        labels_lab = ('L', 'A', 'B')
-        for i, (color, label) in enumerate(zip(colors_lab, labels_lab)):
-            hist = cv2.calcHist([lab_img], [i], v_mask_binary, [256], [0, 256])
-            axes[1].plot(hist, color=color, label=label)
-        axes[1].set_title('LAB Histogram')
-        axes[1].set_xlabel('Pixel Value')
-        axes[1].set_ylabel('Frequency')
-        axes[1].legend()
+        lab_colors = ("black", "darkgreen", "darkred")
+        lab_labels = ("L", "A", "B")
 
-        # HSV histogram
+        for i, (color, label) in enumerate(zip(lab_colors, lab_labels)):
+            hist = cv2.calcHist(
+                [lab_img],
+                [i],
+                mask,
+                [256],
+                [0, 256],
+            )
+            ax.plot(
+                hist,
+                color=color,
+                linestyle="--",
+                label=f"LAB-{label}",
+            )
+
+        # --- HSV ---
         hsv_img = cv2.cvtColor(self.img, cv2.COLOR_BGR2HSV)
-        colors_hsv = ('orange', 'purple', 'cyan')
-        labels_hsv = ('H', 'S', 'V')
-        for i, (color, label) in enumerate(zip(colors_hsv, labels_hsv)):
-            hist = cv2.calcHist([hsv_img], [i], v_mask_binary, [256], [0, 256])
-            axes[2].plot(hist, color=color, label=label)
-        axes[2].set_title('HSV Histogram')
-        axes[2].set_xlabel('Pixel Value')
-        axes[2].set_ylabel('Frequency')
-        axes[2].legend()
+        hsv_colors = ("orange", "purple", "cyan")
+        hsv_labels = ("H", "S", "V")
+
+        for i, (color, label) in enumerate(zip(hsv_colors, hsv_labels)):
+            hist = cv2.calcHist(
+                [hsv_img],
+                [i],
+                mask,
+                [256],
+                [0, 256],
+            )
+            ax.plot(
+                hist,
+                color=color,
+                linestyle=":",
+                label=f"HSV-{label}",
+            )
+
+        ax.set_title("Color Histograms (RGB / LAB / HSV)")
+        ax.set_xlabel("Pixel Value")
+        ax.set_ylabel("Frequency")
+        ax.legend(ncol=3)
+        ax.grid(alpha=0.3)
 
         plt.tight_layout()
 
-        # Convert figure to image array
+        # Convert figure to image
         fig.canvas.draw()
         width, height = fig.canvas.get_width_height()
         buf = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
         buf = buf.reshape(height, width, 4)
 
-        # Convert RGBA to BGR for OpenCV
-        self.img_color_histogram = cv2.cvtColor(buf, cv2.COLOR_RGBA2BGR)
+        self.img_color_histogram = cv2.cvtColor(
+            buf,
+            cv2.COLOR_RGBA2BGR,
+        )
 
         if self.visual:
             plt.show()
@@ -314,66 +350,84 @@ class Transformation:
 
     def show_all(self):
         """
-        Displays all available transformed images in a single figure
-        with subplots. Click on an image to open it in a separate
-        interactive window.
+        Displays all available transformed images.
+        Main images are displayed on the first row,
+        color histogram is displayed below in full width.
+        Clicking on any image opens it in a separate window.
         """
-        # Collect all images and titles
-        images = [
+        main_images = [
             (self.img, "Original"),
             (self.img_gauss, "Gaussian Blur"),
             (self.img_masked, "Mask Applied"),
             (self.img_roi, "ROI Detection"),
             (self.img_analyzed, "Analyzed Objects"),
             (self.img_pseudolandmarks, "Pseudolandmarks"),
-            (self.img_color_histogram, "Pixel Intensity")
         ]
 
-        # Keep only valid images
-        images = [(img, title) for img, title in images if img is not None]
+        main_images = [
+            (img, title) for img, title in main_images if img is not None
+        ]
 
-        n = len(images)
+        hist_image = self.img_color_histogram
 
-        if n == 0:
+        if not main_images and hist_image is None:
             print("No images to display")
             return
 
-        # Create subplots
-        fig, axes = plt.subplots(1, n, figsize=(5 * n, 5))
-        if n == 1:
-            axes = [axes]
+        n_cols = len(main_images)
+        n_rows = 2 if hist_image is not None else 1
 
-        # Display each image in a subplot
-        for ax, (img, title) in zip(axes, images):
-            if isinstance(img, np.ndarray):
-                img_disp = (cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                            if img.ndim == 3 and img.shape[-1] == 3
-                            else img)
-            else:
-                img_disp = img
+        fig = plt.figure(figsize=(5 * n_cols, 10 if n_rows == 2 else 5))
+        gs = fig.add_gridspec(n_rows, n_cols)
+
+        axes = []
+
+        # --- First row: main images ---
+        for col, (img, title) in enumerate(main_images):
+            ax = fig.add_subplot(gs[0, col])
+            img_disp = (
+                cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                if isinstance(img, np.ndarray)
+                and img.ndim == 3 and img.shape[-1] == 3
+                else img
+            )
             ax.imshow(img_disp)
             ax.set_title(title)
-            ax.axis('off')
+            ax.axis("off")
+            axes.append((ax, img, title))
 
-        # Function to open image in a new window on click
+        # --- Second row: histogram (full width) ---
+        if hist_image is not None:
+            hist_ax = fig.add_subplot(gs[1, :])
+            hist_disp = cv2.cvtColor(
+                hist_image,
+                cv2.COLOR_BGR2RGB,
+            )
+            hist_ax.imshow(hist_disp)
+            hist_ax.set_title("Color Histogram")
+            hist_ax.axis("off")
+            axes.append((hist_ax, hist_image, "Color Histogram"))
+
+        # --- Click handling ---
         def onclick(event):
-            for i, ax in enumerate(axes):
-                if ax == event.inaxes:
-                    img, title = images[i]
-                    plt.figure(figsize=(6, 6))
-                    if isinstance(img, np.ndarray):
-                        img_disp = (cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                                    if img.ndim == 3 and img.shape[-1] == 3
-                                    else img)
-                    else:
-                        img_disp = img
+            for ax, img, title in axes:
+                if event.inaxes == ax:
+                    plt.figure(figsize=(8, 6))
+                    img_disp = (
+                        cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                        if isinstance(img, np.ndarray)
+                        and img.ndim == 3
+                        and img.shape[-1] == 3
+                        else img
+                    )
                     plt.imshow(img_disp)
                     plt.title(title)
-                    plt.axis('off')
+                    plt.axis("off")
                     plt.show()
                     break
 
-        fig.canvas.mpl_connect('button_press_event', onclick)
+        fig.canvas.mpl_connect("button_press_event", onclick)
+        plt.tight_layout()
         plt.show()
 
 
