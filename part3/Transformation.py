@@ -62,7 +62,7 @@ def parse_input():
     """
     parser = argparse.ArgumentParser(prog='Augmentation')
 
-    parser.add_argument('image_path', nargs='?',
+    parser.add_argument('image_path',
                         help='Direct path to a single image file')
 
     parser.add_argument(
@@ -113,14 +113,13 @@ class Transformation:
         """
         Executes the transformation corresponding to the provided type.
         """
-        self.gauss()
-        self.roi()
-        self.mask()
-        self.analyze()
-        self.pseudo_landmarks()
-        self.color_histogram()
         try:
-            pass
+            self.gauss()
+            self.roi()
+            self.mask()
+            self.analyze()
+            self.pseudo_landmarks()
+            self.color_histogram()
         except Exception as e:
             print(f"{Fore.RED}Error: Processing failed for file: "
                   f"{self.path}: {e}{Style.RESET_ALL}")
@@ -251,7 +250,7 @@ class Transformation:
             ax.plot(
                 hist,
                 color=color,
-                linestyle="-",
+                linestyle="solid",
                 label=f"RGB-{label}",
             )
 
@@ -271,7 +270,7 @@ class Transformation:
             ax.plot(
                 hist,
                 color=color,
-                linestyle="--",
+                linestyle="solid",
                 label=f"LAB-{label}",
             )
 
@@ -291,7 +290,7 @@ class Transformation:
             ax.plot(
                 hist,
                 color=color,
-                linestyle=":",
+                linestyle="solid",
                 label=f"HSV-{label}",
             )
 
