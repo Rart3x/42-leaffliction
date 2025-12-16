@@ -311,13 +311,11 @@ class Transformation:
         :param p_dst: Destination directory path where images will be saved.
         """
         images = [
-            (self.img, "_original"),
             (self.img_gauss, "_gaussian_blur"),
             (self.img_masked, "_mask_applied"),
             (self.img_roi, "_ROI_detection"),
             (self.img_analyzed, "_analyzed_objects"),
             (self.img_pseudolandmarks, "_pseudolandmarks"),
-            (self.img_color_histogram, "_color_histogram"),
         ]
 
         base_name = os.path.splitext(self.filename)[0]
