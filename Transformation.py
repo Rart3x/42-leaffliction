@@ -1,7 +1,7 @@
 from colorama import Fore, Style
 from matplotlib import pyplot as plt
-from PIL import Image, UnidentifiedImageError
 from plantcv import plantcv as pcv
+from utils import is_jpg
 
 import argparse
 import cv2
@@ -35,20 +35,6 @@ def folder(p_src: str, p_dst: str, p_type: str):
     ]
 
     return jpg_files
-
-
-def is_jpg(path: str) -> bool:
-    """
-    Checks if the given file is a valid JPG/JPEG image.
-
-    :param path: Path to the image file.
-    :return: True if the file exists and is a JPEG image, False otherwise.
-    """
-    try:
-        with Image.open(path) as img:
-            return img.format == "JPEG"
-    except (UnidentifiedImageError, OSError):
-        return False
 
 
 def parse_input():
