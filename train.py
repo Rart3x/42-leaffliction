@@ -12,9 +12,11 @@ def parse_args() -> str:
 
     parser.add_argument('data_path',
                         help='Direct path to the data folder')
+    parser.add_argument('-m', '--model', dest='model', help='Path to save/load the model')
     v_args = parser.parse_args()
     v_path = v_args.data_path
-    return v_path
+    v_model = v_args.model if hasattr(v_args, 'model') else None
+    return v_path, v_model
 
 
 def create_data_generators(p_path: str, batch_size: int = 16, img_size: (int, int) = (224, 224)):
@@ -68,7 +70,7 @@ def create_data_generators(p_path: str, batch_size: int = 16, img_size: (int, in
 
 
 def main():
-    v_path = parse_args()
+    v_path, v_model = parse_args()
     
     # Use memory-efficient data generators instead of loading all data at once
     img_size = (224, 224)  # Reduced from 256 to save memory
@@ -123,6 +125,9 @@ def main():
     model.add(Dense(num_classes))
     model.add(Activation('softmax'))
 
+    if v_model:
+        model.load_weights(v_model)
+
     model.compile(loss='categorical_crossentropy',
                 optimizer='adam',
                 metrics=['accuracy'])
@@ -153,7 +158,7 @@ def main():
         model.save('leaf_disease_model.h5')
         print("Model saved to 'leaf_disease_model.h5'")
     except KeyboardInterrupt as e:
-        model.save('model_WIP.keras')
+        model.save_weights('checkpoint.weights.h5')
         print("Canceled by user", e)
     except Exception as e:
         print("Error", e)
