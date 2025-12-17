@@ -1,4 +1,4 @@
 .idea
 leaves
-**/*.venv
+**/*venv
 __pycache__

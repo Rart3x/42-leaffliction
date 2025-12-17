@@ -54,6 +54,7 @@ six==1.17.0
 sortedcontainers==2.4.0
 statsmodels==0.14.6
 tblib==3.2.2
+tensorflow==2.15.0
 threadpoolctl==3.6.0
 tifffile==2025.5.10
 toolz==1.1.0
