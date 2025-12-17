@@ -1,15 +1,10 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Activation, Dropout, BatchNormalization
-from tensorflow.keras.datasets import cifar10
-from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 import matplotlib.pyplot as plt
 import argparse
 import os
-import numpy as np
-from PIL import Image
-from sklearn.model_selection import train_test_split
-from utils import is_jpg
 
 
 def parse_args() -> str:
@@ -22,95 +17,69 @@ def parse_args() -> str:
     return v_path
 
 
-def load_data(p_path: str):
+def create_data_generators(p_path: str, batch_size: int = 16, img_size: (int, int) = (224, 224)):
     """
-    Load images from subdirectories, resize to 256x256, create labels,
-    and split into train/test sets.
-
+    Create ImageDataGenerators for memory-efficient data loading.
+    
     :param p_path: Path to the directory containing class subdirectories
-    :return: Tuple of ((x_train, y_train), (x_test, y_test))
-             where x arrays have shape (nb_images, 256, 256, 3)
-             and y arrays have shape (nb_images, 1)
+    :param batch_size: Number of images to load per batch
+    :param img_size: Target image size (width, height)
+    :return: Tuple of (train_generator, validation_generator, num_classes)
     """
     if not os.path.isdir(p_path):
         raise ValueError(f"Directory does not exist: {p_path}")
 
-    class_dirs = []
-    for item in os.listdir(p_path):
-        item_path = os.path.join(p_path, item)
-        if os.path.isdir(item_path):
-            class_dirs.append(item)
-    
-    class_dirs.sort()
-    
-    if not class_dirs:
-        raise ValueError(f"No subdirectories found in {p_path}")
-
-    class_to_label = {class_name: idx for idx, class_name in enumerate(class_dirs)}
-
-    images = []
-    labels = []
-
-    for class_name in class_dirs:
-        class_path = os.path.join(p_path, class_name)
-        class_label = class_to_label[class_name]
-
-        # Get all JPG files in this class directory
-        jpg_files = [
-            os.path.join(class_path, f)
-            for f in os.listdir(class_path)
-            if is_jpg(os.path.join(class_path, f))
-            and os.path.isfile(os.path.join(class_path, f))
-        ]
-
-        if not jpg_files:
-            print(f"Warning: No JPG images found in {class_path}")
-            continue
-
-        for img_path in jpg_files:
-            try:
-                img = Image.open(img_path)
-                
-                if img.mode != 'RGB':
-                    img = img.convert('RGB')
-                
-                img = img.resize((256, 256), Image.LANCZOS)
-                
-                img_array = np.array(img, dtype=np.float32) / 255.0
-                
-                images.append(img_array)
-                labels.append(class_label)
-            except Exception as e:
-                print(f"Warning: Failed to load {img_path}: {e}")
-                continue
-
-    if not images:
-        raise ValueError(f"No images were successfully loaded from {p_path}")
-
-    images = np.array(images)
-    labels = np.array(labels, dtype=np.int32)
-
-    labels = labels.reshape(-1, 1)
-
-    x_train, x_test, y_train, y_test = train_test_split(
-        images, labels, test_size=0.2, random_state=42, shuffle=True
+    # Create ImageDataGenerator with normalization and validation split
+    train_datagen = ImageDataGenerator(
+        rescale=1./255,
+        validation_split=0.2  # 80% train, 20% validation
     )
 
-    num_classes = len(class_dirs)
-    y_train = to_categorical(y_train.flatten(), num_classes)
-    y_test = to_categorical(y_test.flatten(), num_classes)
+    # Training data generator
+    train_generator = train_datagen.flow_from_directory(
+        p_path,
+        target_size=img_size,
+        batch_size=batch_size,
+        class_mode='categorical',
+        subset='training',
+        shuffle=True,
+        seed=42
+    )
 
-    return (x_train, y_train), (x_test, y_test)
+    # Validation data generator
+    validation_generator = train_datagen.flow_from_directory(
+        p_path,
+        target_size=img_size,
+        batch_size=batch_size,
+        class_mode='categorical',
+        subset='validation',
+        shuffle=False,
+        seed=42
+    )
+
+    num_classes = len(train_generator.class_indices)
+    
+    print(f"\nFound {train_generator.samples} training images")
+    print(f"Found {validation_generator.samples} validation images")
+    print(f"Number of classes: {num_classes}")
+    print(f"Class mapping: {train_generator.class_indices}\n")
+    
+    return train_generator, validation_generator, num_classes
 
 
 def main():
     v_path = parse_args()
-    (x_train, y_train), (x_test, y_test) = load_data(v_path)
-
-    num_classes = y_train.shape[1]
+    
+    # Use memory-efficient data generators instead of loading all data at once
+    img_size = (224, 224)  # Reduced from 256 to save memory
+    batch_size = 16
+    
+    train_generator, validation_generator, num_classes = create_data_generators(
+        v_path, batch_size=batch_size, img_size=img_size
+    )
 
     model = Sequential()
-    model.add(Input(shape=(256, 256, 3)))
+    model.add(Input(shape=(img_size[0], img_size[1], 3)))
 
     # Layer 1
     model.add(Conv2D(96, kernel_size=(3, 3), strides=(1, 1), padding='same'))
@@ -158,23 +127,30 @@ def main():
                 optimizer='adam',
                 metrics=['accuracy'])
 
-    history = model.fit(x_train, y_train,
-                    batch_size=128,
-                    epochs=15,
-                    validation_split=0.2,
-                    verbose=1)
+    # Use fit with generators for memory-efficient training
+    history = model.fit(
+        train_generator,
+        epochs=15,
+        validation_data=validation_generator,
+        verbose=1
+    )
 
-    test_loss, test_acc = model.evaluate(x_test, y_test, verbose=0)
-    print(f'Test Accuracy: {test_acc:.4f}')
+    val_loss, val_acc = model.evaluate(validation_generator, verbose=0)
+    print(f'\nValidation Accuracy: {val_acc:.4f}')
 
     plt.plot(history.history['accuracy'], label='Train Accuracy')
     plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-    plt.title('AlexNet on CIFAR-10 (GPU)')
+    plt.title('Leaf Disease Classification')
     plt.xlabel('Epochs')
     plt.ylabel('Accuracy')
     plt.legend()
     plt.grid(True)
-    plt.show()
+    plt.savefig('training_history.png')
+    print("\nTraining history saved to 'training_history.png'")
+    
+    # Save the model
+    model.save('leaf_disease_model.h5')
+    print("Model saved to 'leaf_disease_model.h5'")
 
 
 if __name__ == "__main__":
