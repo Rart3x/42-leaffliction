@@ -2,6 +2,8 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Activation, Dropout, BatchNormalization
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
+from tensorflow.keras.optimizers import Adam
 import matplotlib.pyplot as plt
 import argparse
 import os
@@ -31,10 +33,23 @@ def create_data_generators(p_path: str, batch_size: int = 16, img_size: (int, in
     if not os.path.isdir(p_path):
         raise ValueError(f"Directory does not exist: {p_path}")
 
-    # Create ImageDataGenerator with normalization and validation split
+    # Create ImageDataGenerator with DATA AUGMENTATION for training
     train_datagen = ImageDataGenerator(
         rescale=1./255,
+        rotation_range=20,
+        width_shift_range=0.2,
+        height_shift_range=0.2,
+        horizontal_flip=True,
+        zoom_range=0.2,
+        shear_range=0.15,
+        fill_mode='nearest',
         validation_split=0.2  # 80% train, 20% validation
+    )
+    
+    # Validation generator - NO augmentation, only rescaling
+    val_datagen = ImageDataGenerator(
+        rescale=1./255,
+        validation_split=0.2
     )
 
     # Training data generator
@@ -48,8 +63,8 @@ def create_data_generators(p_path: str, batch_size: int = 16, img_size: (int, in
         seed=42
     )
 
-    # Validation data generator
-    validation_generator = train_datagen.flow_from_directory(
+    # Validation data generator (no augmentation)
+    validation_generator = val_datagen.flow_from_directory(
         p_path,
         target_size=img_size,
         batch_size=batch_size,
@@ -83,61 +98,111 @@ def main():
     model = Sequential()
     model.add(Input(shape=(img_size[0], img_size[1], 3)))
 
-    # Layer 1
-    model.add(Conv2D(96, kernel_size=(3, 3), strides=(1, 1), padding='same'))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    # Block 1
+    model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
     model.add(BatchNormalization())
-
-    # Layer 2
-    model.add(Conv2D(256, kernel_size=(3, 3), strides=(1, 1), padding='same'))
     model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2,2), strides=(2,2)))
+    model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
     model.add(BatchNormalization())
-
-    # Layer 3
-    model.add(Conv2D(384, kernel_size=(3,3), strides=(1,1), padding='same'))
     model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
 
-    # Layer 4
-    model.add(Conv2D(384, kernel_size=(3,3), strides=(1,1), padding='same'))
+    # Block 2
+    model.add(Conv2D(128, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
     model.add(Activation('relu'))
+    model.add(Conv2D(128, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
 
-    # Layer 5
-    model.add(Conv2D(256, kernel_size=(3,3), strides=(1,1), padding='same'))
+    # Block 3
+    model.add(Conv2D(256, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
     model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2,2), strides=(2,2)))
+    model.add(Conv2D(256, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+
+    # Block 4
+    model.add(Conv2D(512, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Conv2D(512, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
 
     # Flatten
     model.add(Flatten())
 
-    # Fully Connected Layer 1
-    model.add(Dense(1024))
+    # Fully Connected Layers
+    model.add(Dense(512))
+    model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(Dropout(0.5))
 
-    # Fully Connected Layer 2
-    model.add(Dense(512))
+    model.add(Dense(256))
+    model.add(BatchNormalization())
     model.add(Activation('relu'))
     model.add(Dropout(0.5))
 
     # Output Layer
-    model.add(Dense(num_classes))
-    model.add(Activation('softmax'))
+    model.add(Dense(num_classes, activation='softmax'))
 
     if v_model:
         model.load_weights(v_model)
 
-    model.compile(loss='categorical_crossentropy',
-                optimizer='adam',
-                metrics=['accuracy'])
+    # Compile with lower learning rate
+    model.compile(
+        loss='categorical_crossentropy',
+        optimizer=Adam(learning_rate=0.001),
+        metrics=['accuracy']
+    )
+    
+    # Callbacks for better training
+    callbacks = [
+        # Reduce learning rate when validation loss plateaus
+        ReduceLROnPlateau(
+            monitor='val_loss',
+            factor=0.5,
+            patience=3,
+            min_lr=1e-7,
+            verbose=1
+        ),
+        # Stop early if not improving
+        EarlyStopping(
+            monitor='val_loss',
+            patience=8,
+            restore_best_weights=True,
+            verbose=1
+        ),
+        # Save best model during training
+        ModelCheckpoint(
+            'best_model.weights.h5',
+            monitor='val_accuracy',
+            save_best_only=True,
+            save_weights_only=True,
+            verbose=1
+        )
+    ]
 
     try:
+        print("\n" + "="*60)
+        print("Starting training with improved architecture...")
+        print("="*60 + "\n")
+        
         # Use fit with generators for memory-efficient training
         history = model.fit(
             train_generator,
-            epochs=15,
+            epochs=50,  # More epochs but will stop early if not improving
             validation_data=validation_generator,
+            callbacks=callbacks,
             verbose=1
         )
 
