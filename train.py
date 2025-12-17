@@ -127,34 +127,37 @@ def main():
                 optimizer='adam',
                 metrics=['accuracy'])
 
-    # Use fit with generators for memory-efficient training
-    history = model.fit(
-        train_generator,
-        epochs=15,
-        validation_data=validation_generator,
-        verbose=1
-    )
+    try:
+        # Use fit with generators for memory-efficient training
+        history = model.fit(
+            train_generator,
+            epochs=15,
+            validation_data=validation_generator,
+            verbose=1
+        )
 
-    val_loss, val_acc = model.evaluate(validation_generator, verbose=0)
-    print(f'\nValidation Accuracy: {val_acc:.4f}')
+        val_loss, val_acc = model.evaluate(validation_generator, verbose=0)
+        print(f'\nValidation Accuracy: {val_acc:.4f}')
 
-    plt.plot(history.history['accuracy'], label='Train Accuracy')
-    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-    plt.title('Leaf Disease Classification')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.legend()
-    plt.grid(True)
-    plt.savefig('training_history.png')
-    print("\nTraining history saved to 'training_history.png'")
-    
-    # Save the model
-    model.save('leaf_disease_model.h5')
-    print("Model saved to 'leaf_disease_model.h5'")
+        plt.plot(history.history['accuracy'], label='Train Accuracy')
+        plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+        plt.title('Leaf Disease Classification')
+        plt.xlabel('Epochs')
+        plt.ylabel('Accuracy')
+        plt.legend()
+        plt.grid(True)
+        plt.savefig('training_history.png')
+        print("\nTraining history saved to 'training_history.png'")
+        
+        # Save the model
+        model.save('leaf_disease_model.h5')
+        print("Model saved to 'leaf_disease_model.h5'")
+    except KeyboardInterrupt as e:
+        model.save('model_WIP.keras')
+        print("Canceled by user", e)
+    except Exception as e:
+        print("Error", e)
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except Exception as e:
-        print("mes morts", e)
+    main()
