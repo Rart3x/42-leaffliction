@@ -1,5 +1,6 @@
 from colorama import Fore, Style
 from matplotlib import pyplot as plt
+from plantcv import plantcv as pcv
 from utils import is_jpg
 
 import argparse
@@ -68,7 +69,7 @@ def parse_input():
 def _extract_hsv_channel(img, channel):
     """
     Extract a specific channel from HSV color space.
-    
+
     :param img: Input BGR image
     :param channel: Channel to extract ('h', 's', 'v')
     :return: Single channel grayscale image
@@ -81,7 +82,7 @@ def _extract_hsv_channel(img, channel):
 def _extract_lab_channel(img, channel):
     """
     Extract a specific channel from LAB color space.
-    
+
     :param img: Input BGR image
     :param channel: Channel to extract ('l', 'a', 'b')
     :return: Single channel grayscale image
@@ -94,23 +95,26 @@ def _extract_lab_channel(img, channel):
 def _binary_threshold(gray_img, threshold, object_type='light'):
     """
     Apply binary thresholding to a grayscale image.
-    
+
     :param gray_img: Input grayscale image
     :param threshold: Threshold value
-    :param object_type: 'light' for objects brighter than threshold, 'dark' for darker
+    :param object_type: 'light' for objects brighter than threshold,
+                        'dark' for darker
     :return: Binary mask image
     """
     if object_type == 'light':
-        _, binary = cv2.threshold(gray_img, threshold, 255, cv2.THRESH_BINARY)
+        _, binary = cv2.threshold(
+            gray_img, threshold, 255, cv2.THRESH_BINARY)
     else:
-        _, binary = cv2.threshold(gray_img, threshold, 255, cv2.THRESH_BINARY_INV)
+        _, binary = cv2.threshold(
+            gray_img, threshold, 255, cv2.THRESH_BINARY_INV)
     return binary
 
 
 def _apply_mask(img, mask, mask_color='white'):
     """
     Apply a binary mask to an image.
-    
+
     :param img: Input image
     :param mask: Binary mask (0 or 255)
     :param mask_color: Background color when mask is 0 ('white' or 'black')
@@ -120,7 +124,7 @@ def _apply_mask(img, mask, mask_color='white'):
         background = np.ones_like(img) * 255
     else:
         background = np.zeros_like(img)
-    
+
     mask_3channel = cv2.merge([mask, mask, mask]) / 255.0
     result = img * mask_3channel + background * (1 - mask_3channel)
     return result.astype(np.uint8)
@@ -135,40 +139,43 @@ class _ROI:
 def _find_roi_contours(bin_img):
     """
     Find contours from a binary image and return ROI-like object.
-    
+
     :param bin_img: Binary image
     :return: ROI object with contours attribute
     """
-    contours, _ = cv2.findContours(bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(
+        bin_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     return _ROI(contours)
 
 
 def _analyze_size(img, labeled_mask, label=""):
     """
     Analyze size/shape of objects in mask and draw on image.
-    
+
     :param img: Input image
     :param labeled_mask: Binary mask
     :param label: Optional label (not used)
     :return: Image with contours and bounding boxes drawn
     """
     result_img = img.copy()
-    contours, _ = cv2.findContours(labeled_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    
+    contours, _ = cv2.findContours(
+        labeled_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
     for contour in contours:
         # Draw contour
         cv2.drawContours(result_img, [contour], -1, (0, 255, 0), 2)
         # Draw bounding box
         x, y, w, h = cv2.boundingRect(contour)
-        cv2.rectangle(result_img, (x, y), (x + w, y + h), (255, 0, 0), 2)
-    
+        cv2.rectangle(
+            result_img, (x, y), (x + w, y + h), (255, 0, 0), 2)
+
     return result_img
 
 
 def _y_axis_pseudolandmarks(img, mask):
     """
     Compute pseudo-landmarks along the y-axis of the mask.
-    
+
     :param img: Input image (not used but kept for compatibility)
     :param mask: Binary mask
     :return: Tuple of (left_points, right_points, center_points)
@@ -177,31 +184,32 @@ def _y_axis_pseudolandmarks(img, mask):
     left_points = []
     right_points = []
     center_points = []
-    
+
     # Find contours to get the object region
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours, _ = cv2.findContours(
+        mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
         return left_points, right_points, center_points
-    
+
     # Combine all contours into a single mask region
     combined_mask = np.zeros_like(mask)
     cv2.drawContours(combined_mask, contours, -1, 255, -1)
-    
-    # For each y-coordinate, find leftmost, rightmost, and center x-coordinates
+
+    # For each y-coordinate, find leftmost, rightmost, and center x-coords
     for y in range(height):
         row = combined_mask[y, :]
         white_pixels = np.where(row == 255)[0]
-        
+
         if len(white_pixels) > 0:
             left_x = white_pixels[0]
             right_x = white_pixels[-1]
             center_x = (left_x + right_x) // 2
-            
+
             # Store as arrays with [0] access pattern like plantcv
             left_points.append(np.array([[left_x, y]]))
             right_points.append(np.array([[right_x, y]]))
             center_points.append(np.array([[center_x, y]]))
-    
+
     return left_points, right_points, center_points
 
 
@@ -270,40 +278,32 @@ class Transformation:
         Applies a binary mask based on the saturation channel of the image.
         """
         v_hsv = _extract_hsv_channel(self.img, 's')
-        v_mask_binary = _binary_threshold(v_hsv, threshold=85, object_type='light')
-        self.img_masked = _apply_mask(self.img, v_mask_binary, mask_color='white')
+        v_mask_binary = _binary_threshold(
+            v_hsv, threshold=60, object_type='light')
+        self.img_masked = _apply_mask(
+            self.img, v_mask_binary, mask_color='white')
 
         if self.visual:
             plt.imshow(self.img_masked)
             plt.title("Mask Applied")
             plt.show()
 
-    def roi(self):
-        """
-        Detects Regions of Interest (ROI) using the 'a' channel
-        of LAB colorspace. Draws contours on the image.
-        """
-        v_gray = _extract_lab_channel(self.img, 'a')
-        v_mask = _binary_threshold(v_gray, threshold=100, object_type='light')
-        v_roi = _find_roi_contours(v_mask)
-
-        self.img_roi = self.img.copy()
-
-        for contour in v_roi.contours:
-            if isinstance(contour, tuple):
-                contour = list(contour)
-            cv2.drawContours(self.img_roi, contour, -1, (255, 0, 0), 3)
-
-        if self.visual:
-            plt.imshow(cv2.cvtColor(self.img_roi, cv2.COLOR_BGR2RGB))
-            plt.title('Automatic ROI Detection')
-            plt.show()
-
     def analyze(self):
-        v_hsv = _extract_hsv_channel(self.img, 's')
-        v_mask_binary = _binary_threshold(v_hsv, threshold=85, object_type='light')
-        shape_image = _analyze_size(self.img, v_mask_binary, label="")
+        v_hsv = pcv.rgb2gray_hsv(rgb_img=self.img, channel='s')
+        v_mask_binary = pcv.threshold.binary(
+            gray_img=v_hsv, threshold=85, object_type='light')
+        shape_image = (pcv.analyze.size(
+            img=self.img,
+            labeled_mask=v_mask_binary,
+            label=""))
         self.img_analyzed = shape_image.copy()
+
+    def roi(self):
+        v_hsv = _extract_hsv_channel(self.img, 's')
+        v_mask_binary = _binary_threshold(
+            v_hsv, threshold=85, object_type='light')
+        shape_image = _analyze_size(self.img, v_mask_binary, label="")
+        self.img_roi = shape_image.copy()
 
     def pseudo_landmarks(self):
         """
@@ -311,8 +311,10 @@ class Transformation:
             on the image using homology analysis.
         """
         v_hsv = _extract_hsv_channel(self.img, 's')
-        v_mask_binary = _binary_threshold(v_hsv, threshold=85, object_type='light')
-        left, right, center_h = _y_axis_pseudolandmarks(self.img, v_mask_binary)
+        v_mask_binary = _binary_threshold(
+            v_hsv, threshold=85, object_type='light')
+        left, right, center_h = _y_axis_pseudolandmarks(
+            self.img, v_mask_binary)
 
         self.img_pseudolandmarks = self.img.copy()
 
