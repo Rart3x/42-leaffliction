@@ -77,7 +77,7 @@ class Augmentation:
         self.img_rotated = self.img.rotate(180)
         self.img_blurred = self.img.filter(ImageFilter.GaussianBlur(radius=5))
         self.img_contrasted = v_enhancer_contrast.enhance(4)
-        self.img_illuminated = v_enhancer_brightness.enhance(3)
+        self.img_illuminated = v_enhancer_brightness.enhance(1.5)
         self.img_scaled = zoom(self.img, 2)
         self.img_projected = self.img.transform(
             self.img.size,
@@ -154,7 +154,7 @@ class Augmentation:
               f"successfully created"
               f"{Style.RESET_ALL}")
 
-    def show_all(self):
+    def process(self, limit=6):
         """
         Display all augmented images side by side in a single window.
         Also saves the final collage as a single image.
@@ -187,12 +187,18 @@ class Augmentation:
             collage.paste(img, (x_offset, 0))
             x_offset += base_w
 
-        self.rotation()
-        self.blur()
-        self.contrast()
-        self.scaling()
-        self.illumination()
-        self.projective()
+        methods = [
+            self.rotation,
+            self.blur,
+            self.contrast,
+            self.scaling,
+            self.illumination,
+            self.projective
+        ]
+
+        for i, method in enumerate(methods):
+            if i < limit:
+                method()
 
         # Display the final collage
         if self.visual_mode:
@@ -219,23 +225,59 @@ def main():
         print(f"{Fore.RED}No valid file paths provided.{Style.RESET_ALL}")
         return
 
+    files_by_dir = {}
     for path in file_paths:
         if not os.path.isfile(path):
             print(f"{Fore.RED}Error: {path} is not a file{Style.RESET_ALL}")
             continue
 
-        if not is_jpg(path):
-            print(f"{Fore.RED}Error {path}: not a JPG file{Style.RESET_ALL}")
+        dirname = os.path.dirname(path)
+        if dirname not in files_by_dir:
+            files_by_dir[dirname] = []
+        files_by_dir[dirname].append(path)
+
+    for dirname, paths in files_by_dir.items():
+        try:
+            all_files = os.listdir(dirname)
+        except OSError:
             continue
 
-        base_no_ext = os.path.splitext(path)[0]
+        valid_images_count = 0
+        for f in all_files:
+            full_path = os.path.join(dirname, f)
+            if is_jpg(full_path):
+                valid_images_count += 1
 
-        # Skip already augmented images
-        if any(base_no_ext.endswith(sfx) for sfx in g_suffixes):
+        limit = 1925
+        needed = limit - valid_images_count
+
+        if needed <= 0:
+            print(f"Folder {dirname} already has "
+                  f"{valid_images_count} images. Skipping.")
             continue
 
-        aug = Augmentation(path, v_args.visual)
-        aug.show_all()
+        print(f"Folder {dirname}: {valid_images_count} images. "
+              f"Generating {needed} more.")
+
+        for path in paths:
+            if needed <= 0:
+                break
+
+            if not is_jpg(path):
+                print(f"{Fore.RED}Error {path}: not a JPG file"
+                      f"{Style.RESET_ALL}")
+                continue
+
+            base_no_ext = os.path.splitext(path)[0]
+
+            # Skip already augmented images
+            if any(base_no_ext.endswith(sfx) for sfx in g_suffixes):
+                continue
+
+            aug = Augmentation(path, v_args.visual)
+            to_generate = min(6, needed)
+            aug.process(limit=to_generate)
+            needed -= to_generate
 
 
 if __name__ == '__main__':
