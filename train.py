@@ -1,12 +1,22 @@
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, GlobalAveragePooling2D, Dense, Activation, Dropout, BatchNormalization
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
-from tensorflow.keras.optimizers import Adam
-import matplotlib.pyplot as plt
 import argparse
+import matplotlib.pyplot as plt
 import os
+
+
+from tensorflow.keras.callbacks import (ReduceLROnPlateau,
+                                        EarlyStopping,
+                                        ModelCheckpoint)
+from tensorflow.keras.layers import (Input,
+                                     Conv2D,
+                                     MaxPooling2D,
+                                     GlobalAveragePooling2D,
+                                     Dense,
+                                     Activation,
+                                     Dropout,
+                                     BatchNormalization)
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
 
 def parse_args() -> str:
@@ -14,17 +24,22 @@ def parse_args() -> str:
 
     parser.add_argument('data_path',
                         help='Direct path to the data folder')
-    parser.add_argument('-m', '--model', dest='model', help='Path to save/load the model')
+    parser.add_argument('-m',
+                        '--model',
+                        dest='model',
+                        help='Path to save/load the model')
     v_args = parser.parse_args()
     v_path = v_args.data_path
     v_model = v_args.model if hasattr(v_args, 'model') else None
     return v_path, v_model
 
 
-def create_data_generators(p_path: str, batch_size: int = 16, img_size: (int, int) = (224, 224)):
+def create_data_generators(p_path: str,
+                           batch_size: int = 16,
+                           img_size: (int, int) = (224, 224)):
     """
     Create ImageDataGenerators for memory-efficient data loading.
-    
+
     :param p_path: Path to the directory containing class subdirectories
     :param batch_size: Number of images to load per batch
     :param img_size: Target image size (width, height)
@@ -45,7 +60,7 @@ def create_data_generators(p_path: str, batch_size: int = 16, img_size: (int, in
         fill_mode='nearest',
         validation_split=0.2  # 80% train, 20% validation
     )
-    
+
     # Validation generator - NO augmentation, only rescaling
     val_datagen = ImageDataGenerator(
         rescale=1./255,
@@ -75,22 +90,24 @@ def create_data_generators(p_path: str, batch_size: int = 16, img_size: (int, in
     )
 
     num_classes = len(train_generator.class_indices)
-    
+
     print(f"\nFound {train_generator.samples} training images")
     print(f"Found {validation_generator.samples} validation images")
     print(f"Number of classes: {num_classes}")
     print(f"Class mapping: {train_generator.class_indices}\n")
-    
+
     return train_generator, validation_generator, num_classes
 
 
 def main():
     v_path, v_model = parse_args()
-    
+
     # Use memory-efficient data generators instead of loading all data at once
     batch_size = 16
-    
-    train_generator, validation_generator, num_classes = create_data_generators(
+
+    (train_generator,
+     validation_generator,
+     num_classes) = create_data_generators(
         v_path, batch_size=batch_size
     )
 
@@ -158,7 +175,7 @@ def main():
         optimizer=Adam(learning_rate=0.001),
         metrics=['accuracy']
     )
-    
+
     # Callbacks for better training
     callbacks = [
         # Reduce learning rate when validation loss plateaus
@@ -190,7 +207,7 @@ def main():
         print("\n" + "="*60)
         print("Starting training with improved architecture...")
         print("="*60 + "\n")
-        
+
         # Use fit with generators for memory-efficient training
         history = model.fit(
             train_generator,
@@ -212,7 +229,7 @@ def main():
         plt.grid(True)
         plt.savefig('training_history.png')
         print("\nTraining history saved to 'training_history.png'")
-        
+
         # Save the model
         model.save('leaf_disease_model.h5')
         print("Model saved to 'leaf_disease_model.h5'")
