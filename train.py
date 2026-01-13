@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Flatten, Dense, Activation, Dropout, BatchNormalization
+from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, GlobalAveragePooling2D, Dense, Activation, Dropout, BatchNormalization
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.callbacks import ReduceLROnPlateau, EarlyStopping, ModelCheckpoint
 from tensorflow.keras.optimizers import Adam
@@ -88,15 +88,24 @@ def main():
     v_path, v_model = parse_args()
     
     # Use memory-efficient data generators instead of loading all data at once
-    img_size = (224, 224)  # Reduced from 256 to save memory
     batch_size = 16
     
     train_generator, validation_generator, num_classes = create_data_generators(
-        v_path, batch_size=batch_size, img_size=img_size
+        v_path, batch_size=batch_size
     )
 
     model = Sequential()
-    model.add(Input(shape=(img_size[0], img_size[1], 3)))
+    model.add(Input(shape=(256, 256, 3)))
+
+    # Block 0
+    model.add(Conv2D(32, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(Conv2D(32, kernel_size=(3, 3), padding='same'))
+    model.add(BatchNormalization())
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
 
     # Block 1
     model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
@@ -128,25 +137,10 @@ def main():
     model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.25))
 
-    # Block 4
-    model.add(Conv2D(512, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(512, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
     # Flatten
-    model.add(Flatten())
+    model.add(GlobalAveragePooling2D())
 
     # Fully Connected Layers
-    model.add(Dense(512))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-
     model.add(Dense(256))
     model.add(BatchNormalization())
     model.add(Activation('relu'))

@@ -1,0 +1,85 @@
+MISCLASSIFIED EXAMPLES
+================================================================================
+
+Total misclassified: 20 (showing first 20)
+
+1. Apple_Black_rot/image (108)_scaled.JPG
+   True: Apple_Black_rot
+   Predicted: Grape_healthy
+
+2. Apple_Black_rot/image (114)_scaled.JPG
+   True: Apple_Black_rot
+   Predicted: Grape_healthy
+
+3. Apple_Black_rot/image (128)_projected.JPG
+   True: Apple_Black_rot
+   Predicted: Grape_healthy
+
+4. Apple_Black_rot/image (179)_scaled.JPG
+   True: Apple_Black_rot
+   Predicted: Grape_healthy
+
+5. Apple_Black_rot/image (221)_blured.JPG
+   True: Apple_Black_rot
+   Predicted: Apple_scab
+
+6. Apple_Black_rot/image (247)_scaled.JPG
+   True: Apple_Black_rot
+   Predicted: Grape_Black_rot
+
+7. Apple_Black_rot/image (262)_projected.JPG
+   True: Apple_Black_rot
+   Predicted: Apple_scab
+
+8. Apple_Black_rot/image (286)_scaled.JPG
+   True: Apple_Black_rot
+   Predicted: Grape_healthy
+
+9. Apple_healthy/image (1005)_scaled.JPG
+   True: Apple_healthy
+   Predicted: Grape_healthy
+
+10. Apple_healthy/image (1007)_projected.JPG
+   True: Apple_healthy
+   Predicted: Apple_scab
+
+11. Apple_healthy/image (1009)_contrasted.JPG
+   True: Apple_healthy
+   Predicted: Apple_Black_rot
+
+12. Apple_healthy/image (1009)_scaled.JPG
+   True: Apple_healthy
+   Predicted: Apple_Black_rot
+
+13. Apple_healthy/image (1010)_contrasted.JPG
+   True: Apple_healthy
+   Predicted: Apple_Black_rot
+
+14. Apple_healthy/image (1016).JPG
+   True: Apple_healthy
+   Predicted: Apple_Black_rot
+
+15. Apple_healthy/image (1021)_blured.JPG
+   True: Apple_healthy
+   Predicted: Apple_Black_rot
+
+16. Apple_healthy/image (1024)_scaled.JPG
+   True: Apple_healthy
+   Predicted: Apple_Black_rot
+
+17. Apple_healthy/image (1028)_contrasted.JPG
+   True: Apple_healthy
+   Predicted: Apple_scab
+
+18. Apple_healthy/image (1029)_contrasted.JPG
+   True: Apple_healthy
+   Predicted: Apple_Black_rot
+
+19. Apple_healthy/image (1030)_scaled.JPG
+   True: Apple_healthy
+   Predicted: Grape_healthy
+
+20. Apple_healthy/image (1032)_contrasted.JPG
+   True: Apple_healthy
+   Predicted: Apple_scab
+
