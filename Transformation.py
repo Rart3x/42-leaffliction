@@ -49,7 +49,7 @@ def parse_input():
     parser = argparse.ArgumentParser(prog='Transformation')
 
     parser.add_argument('image_path',
-                        help='Direct path to a single image file ')
+                        help='Direct path to a single image file')
 
     parser.add_argument(
         '-dst', '--destination',

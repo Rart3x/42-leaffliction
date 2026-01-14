@@ -179,7 +179,7 @@ def main():
         print("Training canceled by user. "
               "Weights saved to 'checkpoint.weights.h5'")
     except Exception as e:
-        print("Error during training", e)
+        print(f"Error during training: {e}")
 
 
 if __name__ == "__main__":
