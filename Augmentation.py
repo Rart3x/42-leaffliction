@@ -248,7 +248,7 @@ def main():
             if is_jpg(full_path):
                 valid_images_count += 1
 
-        limit = 1925
+        limit = 1925  # target number of images per class
         needed = limit - valid_images_count
 
         if needed <= 0:

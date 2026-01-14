@@ -3,123 +3,38 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 import seaborn as sns
-import tensorflow as tf
 
 from sklearn.metrics import (classification_report,
                              confusion_matrix,
                              accuracy_score)
-from tensorflow.keras.layers import (Input,
-                                     Conv2D,
-                                     MaxPooling2D,
-                                     GlobalAveragePooling2D,
-                                     Dense,
-                                     Activation,
-                                     Dropout,
-                                     BatchNormalization)
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-
-CLASS_NAMES = [
-    'Apple_Black_rot',
-    'Apple_healthy',
-    'Apple_rust',
-    'Apple_scab',
-    'Grape_Black_rot',
-    'Grape_Esca',
-    'Grape_healthy',
-    'Grape_spot'
-]
+from model import create_model, load_model_weights
 
 
 def parse_args():
     """Parse command line arguments"""
     parser = argparse.ArgumentParser(
         prog='evaluate',
-        description='Evaluate leaf disease'
+        description='Evaluate leaf disease '
                     'classification model on test dataset'
     )
 
     parser.add_argument('model_path',
                         help='Path to the .h5 model weights file')
     parser.add_argument('test_dir',
-                        help='Path to test dataset'
-                             'directory (should contain subdirectories'
+                        help='Path to test dataset '
+                             'directory (should contain subdirectories '
                              'for each class)')
     parser.add_argument('--batch-size', type=int, default=32,
                         help='Batch size for evaluation (default: 32)')
     parser.add_argument('--output-dir', default='evaluation_results',
-                        help='Directory to save'
-                             'evaluation results'
+                        help='Directory to save '
+                             'evaluation results '
                              '(default: evaluation_results)')
 
     args = parser.parse_args()
     return args
-
-
-def create_model(num_classes: int = 8):
-    """
-    Create the same model architecture as in train.py and predict.py
-
-    :param num_classes: Number of output classes
-    :return: Compiled model
-    """
-    model = Sequential()
-    model.add(Input(shape=(256, 256, 3)))
-
-    # Block 0
-    model.add(Conv2D(32, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(32, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Block 1
-    model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Block 2
-    model.add(Conv2D(128, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(128, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Block 3
-    model.add(Conv2D(256, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(256, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Flatten
-    model.add(GlobalAveragePooling2D())
-
-    # Fully Connected Layers
-    model.add(Dense(256))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-
-    # Output Layer
-    model.add(Dense(num_classes, activation='softmax'))
-
-    return model
 
 
 def load_test_data(test_dir: str, batch_size: int = 32):
@@ -204,9 +119,10 @@ def save_misclassified_examples(y_true,
     with open(output_path, 'w') as f:
         f.write("MISCLASSIFIED EXAMPLES\n")
         f.write("=" * 80 + "\n\n")
-        f.write(f"Total misclassified:"
-                f"{len(misclassified)} (showing first"
-                f"{max_examples})\n\n")
+        f.write(
+            f"Total misclassified: {len(misclassified)} "
+            f"(showing first {max_examples})\n\n"
+        )
 
         for i, example in enumerate(misclassified, 1):
             f.write(f"{i}. {example['filename']}\n")
@@ -247,19 +163,15 @@ def evaluate_model(model_path: str,
     print(f"✓ Classes: {list(test_generator.class_indices.keys())}\n")
 
     if num_samples < 100:
-        print(f"⚠ WARNING: Test set contains only"
+        print(f"WARNING: Test set contains only "
               f"{num_samples} images (minimum requirement: 100)")
-        print("Consider creating a larger test"
+        print("Consider creating a larger test "
               "set for more reliable evaluation.\n")
 
     # Create and load model
     print(f"Loading model from: {model_path}")
     model = create_model(num_classes=num_classes)
-
-    if model_path.endswith('.weights.h5'):
-        model.load_weights(model_path)
-    else:
-        model = tf.keras.models.load_model(model_path)
+    model = load_model_weights(model, model_path)
 
     print("✓ Model loaded successfully\n")
 
@@ -288,9 +200,9 @@ def evaluate_model(model_path: str,
 
     # Check if meets requirement
     if overall_accuracy >= 0.90:
-        print("✓ PASSED: Accuracy exceeds 90% requirement")
+        print("PASSED: Accuracy exceeds 90% requirement")
     else:
-        print(f"✗ FAILED: Accuracy is below"
+        print(f"FAILED: Accuracy is below "
               f"90% requirement (current: {overall_accuracy*100:.2f}%)")
 
     print("\n")
@@ -336,10 +248,10 @@ def evaluate_model(model_path: str,
     print(f"Overall Accuracy: {overall_accuracy*100:.2f}%")
 
     if overall_accuracy >= 0.90:
-        print("\n✓ SUCCESS: Model meets the"
+        print("\nSUCCESS: Model meets the "
               "90% accuracy requirement for Part 4")
     else:
-        print("\n✗ Model does not meet the"
+        print("\nModel does not meet the "
               "90% accuracy requirement")
         print(f"  Current: {overall_accuracy*100:.2f}% | Required: 90.00%")
 

@@ -1,29 +1,10 @@
 import argparse
 import numpy as np
 import os
-import tensorflow as tf
 
-from tensorflow.keras.layers import (Input,
-                                     Conv2D,
-                                     MaxPooling2D,
-                                     GlobalAveragePooling2D,
-                                     Dense,
-                                     Activation,
-                                     Dropout,
-                                     BatchNormalization)
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.preprocessing import image
 
-CLASS_NAMES = [
-    'Apple_Black_rot',
-    'Apple_healthy',
-    'Apple_rust',
-    'Apple_scab',
-    'Grape_Black_rot',
-    'Grape_Esca',
-    'Grape_healthy',
-    'Grape_spot'
-]
+from model import CLASS_NAMES, create_model, load_model_weights
 
 
 def parse_args():
@@ -42,73 +23,8 @@ def parse_args():
     return args.model_path, args.image_path
 
 
-def create_model(num_classes: int = 8):
-    """
-    Create the same model architecture as in train.py
-
-    :param num_classes: Number of output classes
-    :return: Compiled model
-    """
-    model = Sequential()
-    model.add(Input(shape=(256, 256, 3)))
-
-    # Block 0
-    model.add(Conv2D(32, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(32, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Block 1
-    model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Block 2
-    model.add(Conv2D(128, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(128, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Block 3
-    model.add(Conv2D(256, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(256, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Flatten
-    model.add(GlobalAveragePooling2D())
-
-    # Fully Connected Layers
-    model.add(Dense(256))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-
-    # Output Layer
-    model.add(Dense(num_classes, activation='softmax'))
-
-    return model
-
-
 def load_and_preprocess_image(image_path: str,
-                              target_size: tuple = (256, 256)):
+                              target_size: tuple[int, int] = (256, 256)):
     """
     Load and preprocess an image for prediction
 
@@ -144,15 +60,9 @@ def predict(model_path: str, image_path: str, class_names: list = CLASS_NAMES):
     """
     print(f"\nLoading model from: {model_path}")
 
-    # Create model architecture
+    # Create model architecture and load weights
     model = create_model(num_classes=len(class_names))
-
-    # Load weights
-    if model_path.endswith('.weights.h5'):
-        model.load_weights(model_path)
-    else:
-        # If it's a full model file
-        model = tf.keras.models.load_model(model_path)
+    model = load_model_weights(model, model_path)
 
     print("Model loaded successfully")
     print(f"\nLoading and preprocessing image: {image_path}")
@@ -187,15 +97,13 @@ def predict(model_path: str, image_path: str, class_names: list = CLASS_NAMES):
 
     print("=" * 60 + "\n")
 
-    return class_names[predicted_class_idx], confidence
-
 
 def main():
     """Main function"""
     model_path, image_path = parse_args()
 
     try:
-        predicted_class, confidence = predict(model_path, image_path)
+        predict(model_path, image_path)
     except FileNotFoundError as e:
         print(f"\nError: {e}")
         exit(1)

@@ -1,4 +1,5 @@
 import argparse
+from typing import Optional
 import matplotlib.pyplot as plt
 import os
 
@@ -6,20 +7,13 @@ import os
 from tensorflow.keras.callbacks import (ReduceLROnPlateau,
                                         EarlyStopping,
                                         ModelCheckpoint)
-from tensorflow.keras.layers import (Input,
-                                     Conv2D,
-                                     MaxPooling2D,
-                                     GlobalAveragePooling2D,
-                                     Dense,
-                                     Activation,
-                                     Dropout,
-                                     BatchNormalization)
-from tensorflow.keras.models import Sequential
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
+from model import create_model
 
-def parse_args() -> str:
+
+def parse_args() -> tuple[str, Optional[str]]:
     parser = argparse.ArgumentParser(prog='train')
 
     parser.add_argument('data_path',
@@ -30,13 +24,13 @@ def parse_args() -> str:
                         help='Path to save/load the model')
     v_args = parser.parse_args()
     v_path = v_args.data_path
-    v_model = v_args.model if hasattr(v_args, 'model') else None
+    v_model = v_args.model
     return v_path, v_model
 
 
 def create_data_generators(p_path: str,
                            batch_size: int = 16,
-                           img_size: (int, int) = (224, 224)):
+                           img_size: tuple[int, int] = (256, 256)):
     """
     Create ImageDataGenerators for memory-efficient data loading.
 
@@ -111,60 +105,7 @@ def main():
         v_path, batch_size=batch_size
     )
 
-    model = Sequential()
-    model.add(Input(shape=(256, 256, 3)))
-
-    # Block 0
-    model.add(Conv2D(32, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(32, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Block 1
-    model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(64, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Block 2
-    model.add(Conv2D(128, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(128, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Block 3
-    model.add(Conv2D(256, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Conv2D(256, kernel_size=(3, 3), padding='same'))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
-    model.add(Dropout(0.25))
-
-    # Flatten
-    model.add(GlobalAveragePooling2D())
-
-    # Fully Connected Layers
-    model.add(Dense(256))
-    model.add(BatchNormalization())
-    model.add(Activation('relu'))
-    model.add(Dropout(0.5))
-
-    # Output Layer
-    model.add(Dense(num_classes, activation='softmax'))
+    model = create_model(num_classes=num_classes)
 
     if v_model:
         model.load_weights(v_model)
@@ -233,11 +174,12 @@ def main():
         # Save the model
         model.save('leaf_disease_model.h5')
         print("Model saved to 'leaf_disease_model.h5'")
-    except KeyboardInterrupt as e:
+    except KeyboardInterrupt:
         model.save_weights('checkpoint.weights.h5')
-        print("Canceled by user", e)
+        print("Training canceled by user. "
+              "Weights saved to 'checkpoint.weights.h5'")
     except Exception as e:
-        print("Error", e)
+        print("Error during training", e)
 
 
 if __name__ == "__main__":

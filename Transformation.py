@@ -46,10 +46,10 @@ def parse_input():
              - v_path (str): Path to input image or directory.
              - v_args (argparse.Namespace): Full namespace with all options.
     """
-    parser = argparse.ArgumentParser(prog='Tranformation')
+    parser = argparse.ArgumentParser(prog='Transformation')
 
     parser.add_argument('image_path',
-                        help='Direct path to a single image file')
+                        help='Direct path to a single image file ')
 
     parser.add_argument(
         '-dst', '--destination',

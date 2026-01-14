@@ -22,20 +22,20 @@ def parse_args():
     )
 
     parser.add_argument('source_dir',
-                        help='Source directory containing'
+                        help='Source directory containing '
                              'training images (e.g., leaves/images/)')
     parser.add_argument('test_dir',
                         help='Destination directory for test images')
     parser.add_argument('--test-size', type=float, default=0.15,
-                        help='Fraction of images to use for'
+                        help='Fraction of images to use for '
                              'testing (default: 0.15)')
     parser.add_argument('--min-test-per-class', type=int, default=15,
-                        help='Minimum number of test images'
+                        help='Minimum number of test images '
                              'per class (default: 15)')
     parser.add_argument('--seed', type=int, default=42,
                         help='Random seed for reproducibility (default: 42)')
     parser.add_argument('--copy', action='store_true',
-                        help='Copy files instead of moving'
+                        help='Copy files instead of moving '
                              'them (keeps original data intact)')
 
     args = parser.parse_args()
@@ -144,17 +144,22 @@ def create_test_split(source_dir,
               f"({num_test/len(images)*100:5.1f}%)")
 
     print("\n" + "-"*80)
+    total = total_train + total_test
+    if total > 0:
+        total_test_pct = f"{(total_test / total) * 100:5.1f}%"
+    else:
+        total_test_pct = "  0.0%"
     print(f"{'TOTAL':25s}: {total_test:4d} test / {total_train:4d} train "
-          f"({total_test/(total_train+total_test)*100:5.1f}%)")
+          f"({total_test_pct})")
     print("-"*80 + "\n")
 
     if total_test < 100:
-        print(f"⚠ WARNING: Test set has only {total_test}"
+        print(f"WARNING: Test set has only {total_test} "
               f"images (minimum requirement: 100)")
-        print("Consider using a larger test_size"
+        print("Consider using a larger test_size "
               "or ensuring enough images in source directory.\n")
     else:
-        print(f"✓ Test set has {total_test}"
+        print(f"Test set has {total_test} "
               f"images (meets minimum requirement of 100)\n")
 
     print("="*80)
