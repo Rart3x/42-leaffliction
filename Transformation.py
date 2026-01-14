@@ -1,7 +1,7 @@
 from colorama import Fore, Style
 from matplotlib import pyplot as plt
 from plantcv import plantcv as pcv
-from utils import is_jpg
+from utils.utils import is_jpg
 
 import argparse
 import cv2
