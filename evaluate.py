@@ -9,7 +9,7 @@ from sklearn.metrics import (classification_report,
                              accuracy_score)
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-from model import create_model, load_model_weights
+from utils.model import create_model, load_model_weights
 
 
 def parse_args():

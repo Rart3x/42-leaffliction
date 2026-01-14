@@ -4,7 +4,7 @@ import os
 
 from tensorflow.keras.preprocessing import image
 
-from model import CLASS_NAMES, create_model, load_model_weights
+from utils.model import CLASS_NAMES, create_model, load_model_weights
 
 
 def parse_args():

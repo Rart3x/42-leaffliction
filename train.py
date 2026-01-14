@@ -10,7 +10,7 @@ from tensorflow.keras.callbacks import (ReduceLROnPlateau,
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 
-from model import create_model
+from utils.model import create_model
 
 
 def parse_args() -> tuple[str, Optional[str]]:

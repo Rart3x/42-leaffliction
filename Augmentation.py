@@ -4,7 +4,7 @@ import os
 
 from colorama import Fore, Style
 from PIL import Image, ImageEnhance, ImageFilter
-from utils import is_jpg
+from utils.utils import is_jpg
 
 g_suffixes = {
     "_blurred",
