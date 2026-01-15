@@ -160,9 +160,20 @@ Place your leaf images in the appropriate subdirectories under `leaves/images/`.
 
 ### Train the Model
 ```bash
-python train.py
+python3 train.py <data_path> [-m MODEL]
 ```
-Trains the CNN model on the dataset. The best model weights are saved to `models/best_model.weights.h5` based on validation accuracy.
+
+Trains the CNN model on the dataset. The best model weights are saved based on validation accuracy.
+
+**Arguments:**
+- `data_path` (positional, required): Direct path to the data folder containing training images (e.g., `leaves/images/`)
+- `-m, --model MODEL` (optional): Path to save/load the model weights file (default: `models/best_model.weights.h5`)
+
+**Examples:**
+```bash
+python3 train.py leaves/images/
+python3 train.py leaves/images/ -m models/my_model.weights.h5
+```
 
 **Training features:**
 - Automatic learning rate reduction on plateau
@@ -172,39 +183,151 @@ Trains the CNN model on the dataset. The best model weights are saved to `models
 
 ### Evaluate the Model
 ```bash
-python evaluate.py
+python3 evaluate.py <model_path> <test_dir> [--batch-size BATCH_SIZE] [--output-dir OUTPUT_DIR]
 ```
-Evaluates the trained model on the test dataset and generates:
+
+Evaluates the trained model on the test dataset and generates comprehensive performance metrics.
+
+**Arguments:**
+- `model_path` (positional, required): Path to the `.h5` model weights file
+- `test_dir` (positional, required): Path to test dataset directory (should contain subdirectories for each class)
+- `--batch-size BATCH_SIZE` (optional): Batch size for evaluation (default: 32)
+- `--output-dir OUTPUT_DIR` (optional): Directory to save evaluation results (default: `evaluation_results`)
+
+**Examples:**
+```bash
+python3 evaluate.py models/best_model.weights.h5 test_set/
+python3 evaluate.py models/best_model.weights.h5 test_set/ --batch-size 64 --output-dir my_results/
+```
+
+**Output:**
 - Overall accuracy
 - Confusion matrix
 - Classification report (precision, recall, F1-score per class)
-- List of misclassified images saved to `evaluation_results/`
+- List of misclassified images saved to the output directory
 
 ### Predict Single Image
 ```bash
-python predict.py path/to/leaf/image.jpg
+python3 predict.py <model_path> <image_path>
 ```
-Makes a prediction on a single leaf image and outputs:
+
+Makes a prediction on a single leaf image and outputs the predicted class with confidence scores.
+
+**Arguments:**
+- `model_path` (positional, required): Path to the `.h5` model weights file
+- `image_path` (positional, required): Path to the image to predict
+
+**Examples:**
+```bash
+python3 predict.py models/best_model.weights.h5 path/to/leaf/image.jpg
+python3 predict.py models/best_model.weights.h5 leaves/images/Apple_healthy/image001.jpg
+```
+
+**Output:**
 - Predicted class
 - Confidence scores for all 8 classes
 
 ### Visualize Dataset Distribution
 ```bash
-python Distribution.py
+python3 Distribution.py <directory_path>
 ```
+
 Generates pie charts and bar plots showing the distribution of images across classes.
+
+**Arguments:**
+- `directory_path` (positional, required): Path to directory containing image subdirectories organized by class
+
+**Examples:**
+```bash
+python3 Distribution.py leaves/images/
+```
+
+**Output:**
+- Pie chart showing class distribution
+- Bar plot showing number of images per class
 
 ### Create Test Split
 ```bash
-python create_test_split.py
+python3 create_test_split.py <source_dir> <test_dir> [--test-size TEST_SIZE] [--min-test-per-class MIN_TEST_PER_CLASS] [--seed SEED] [--copy]
 ```
-Splits a portion of the dataset into a separate test set.
+
+Splits a portion of the dataset into a separate test set for model evaluation.
+
+**Arguments:**
+- `source_dir` (positional, required): Source directory containing training images (e.g., `leaves/images/`)
+- `test_dir` (positional, required): Destination directory for test images
+- `--test-size TEST_SIZE` (optional): Fraction of images to use for testing (default: 0.15)
+- `--min-test-per-class MIN_TEST_PER_CLASS` (optional): Minimum number of test images per class (default: 15)
+- `--seed SEED` (optional): Random seed for reproducibility (default: 42)
+- `--copy` (flag): Copy files instead of moving them (keeps original data intact)
+
+**Examples:**
+```bash
+python3 create_test_split.py leaves/images/ test_set/
+python3 create_test_split.py leaves/images/ test_set/ --test-size 0.2 --copy
+python3 create_test_split.py leaves/images/ test_set/ --test-size 0.15 --min-test-per-class 20 --seed 123
+```
 
 ### Apply Data Augmentation
 ```bash
-python Augmentation.py
+python3 Augmentation.py [-v] [-l LIMIT] <image_paths...>
 ```
-Applies various augmentation techniques to expand the training dataset.
+
+Applies various augmentation techniques to expand the training dataset. Supports both single image visualization and batch processing of multiple images.
+
+**Arguments:**
+- `image_paths` (positional): One or more image file paths or glob patterns (e.g., `./images/*/*`)
+- `-v, --visual` (flag): Enable visual rendering of augmented images
+- `-l, --limit LIMIT` (optional): Target number of images per class (default: 1640)
+
+**Behavior:**
+- When processing a directory with glob patterns, generates augmented images until each class reaches the target limit
+- Each original image can generate up to 6 augmented variants (rotated, blurred, contrasted, illuminated, scaled, projected)
+- Skips already augmented images (those ending with augmentation suffixes)
+
+**Examples:**
+```bash
+# Single image with visual display
+python3 Augmentation.py -v ./image.jpg
+
+# Process all images in subdirectories with custom limit
+python3 Augmentation.py ./images/*/* --limit 1500
+
+# Process specific directory pattern
+python3 Augmentation.py leaves/images/Apple_healthy/*.jpg --limit 2000
+```
+
+### Apply Image Transformations
+```bash
+python3 Transformation.py <image_path> [-dst DESTINATION] [-v]
+```
+
+Applies various image transformations including Gaussian blur, masking, ROI detection, object analysis, pseudolandmarks, and color histogram analysis.
+
+**Arguments:**
+- `image_path` (positional, required): Path to a single image file OR directory path containing images
+- `-dst, --destination DESTINATION` (required for directory mode): Destination directory for saving transformations (required when `image_path` is a directory, ignored for single image)
+- `-v, --visual` (flag): Enable visual rendering of transformations
+
+**Behavior:**
+- **Single image mode**: When given a single image file, displays all transformations visually in an interactive window
+  - Shows: Original, Gaussian blur, Mask applied, ROI detection, Analyzed objects, Pseudolandmarks, Color histogram
+  - Clicking on any image opens it in a separate window
+- **Directory mode**: When given a directory path, processes all JPG images and saves transformations to the destination directory
+  - Requires `-dst` argument
+  - Saves transformed images with suffixes: `_gaussian_blur`, `_mask_applied`, `_ROI_detection`, `_analyzed_objects`, `_pseudolandmarks`
+
+**Examples:**
+```bash
+# Single image with visual display
+python3 Transformation.py image.jpg -v
+
+# Process directory and save transformations
+python3 Transformation.py Apple/apple_healthy/ -dst dst_directory/
+
+# Process directory with visual feedback
+python3 Transformation.py leaves/images/Apple_healthy/ -dst output/ -v
+```
 
 ## Training
 

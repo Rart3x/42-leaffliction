@@ -214,6 +214,13 @@ def main():
         help='Enable the rendering of the augmented images'
     )
 
+    parser.add_argument(
+        '-l', '--limit',
+        type=int,
+        default=1640,
+        help='Target number of images per class (default: 1500)'
+    )
+
     v_args, v_remaining = parser.parse_known_args()
 
     file_paths = []
@@ -248,7 +255,7 @@ def main():
             if is_jpg(full_path):
                 valid_images_count += 1
 
-        limit = 1925  # target number of images per class
+        limit = v_args.limit  # target number of images per class
         needed = limit - valid_images_count
 
         if needed <= 0:
