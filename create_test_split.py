@@ -72,10 +72,8 @@ def create_test_split(source_dir,
     if not os.path.exists(source_dir):
         raise FileNotFoundError(f"Source directory not found: {source_dir}")
 
-    # Create test directory
     os.makedirs(test_dir, exist_ok=True)
 
-    # Get all class directories
     class_dirs = [d for d in os.listdir(source_dir)
                   if os.path.isdir(os.path.join(source_dir, d))]
 
@@ -100,27 +98,21 @@ def create_test_split(source_dir,
         source_class_dir = os.path.join(source_dir, class_name)
         test_class_dir = os.path.join(test_dir, class_name)
 
-        # Create test class directory
         os.makedirs(test_class_dir, exist_ok=True)
 
-        # Get all images in class
         images = get_image_files(source_class_dir)
 
         if not images:
             print(f"⚠ Warning: No images found in {class_name}, skipping...")
             continue
 
-        # Calculate number of test images
         num_test = max(min_test_per_class, int(len(images) * test_size))
 
-        # Make sure we don't take more than available
         num_test = min(num_test, len(images))
 
-        # Randomly select test images
         random.shuffle(images)
         test_images = images[:num_test]
 
-        # Move or copy images
         operation = shutil.copy2 if copy_mode else shutil.move
 
         for img in test_images:

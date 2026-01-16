@@ -46,7 +46,6 @@ def create_data_generators(p_path: str,
     if not os.path.isdir(p_path):
         raise ValueError(f"Directory does not exist: {p_path}")
 
-    # Create ImageDataGenerator with DATA AUGMENTATION for training
     train_datagen = ImageDataGenerator(
         rescale=1./255,
         rotation_range=20,
@@ -56,16 +55,14 @@ def create_data_generators(p_path: str,
         zoom_range=0.2,
         shear_range=0.15,
         fill_mode='nearest',
-        validation_split=0.2  # 80% train, 20% validation
+        validation_split=0.2
     )
 
-    # Validation generator - NO augmentation, only rescaling
     val_datagen = ImageDataGenerator(
         rescale=1./255,
         validation_split=0.2
     )
 
-    # Training data generator
     train_generator = train_datagen.flow_from_directory(
         p_path,
         target_size=img_size,
@@ -76,7 +73,6 @@ def create_data_generators(p_path: str,
         seed=42
     )
 
-    # Validation data generator (no augmentation)
     validation_generator = val_datagen.flow_from_directory(
         p_path,
         target_size=img_size,
@@ -115,25 +111,21 @@ def generate_augmented_images(p_path: str,
     if not os.path.isdir(p_path):
         raise ValueError(f"Directory does not exist: {p_path}")
 
-    # Create output directory
     os.makedirs(output_dir, exist_ok=True)
 
     total_images = 0
 
-    # Process each class subdirectory
     for class_name in os.listdir(p_path):
         class_path = os.path.join(p_path, class_name)
 
         if not os.path.isdir(class_path):
             continue
 
-        # Create class subdirectory in output
         output_class_dir = os.path.join(output_dir, class_name)
         os.makedirs(output_class_dir, exist_ok=True)
 
         print(f"\nProcessing class: {class_name}")
 
-        # Get list of image files
         image_files = [f for f in os.listdir(class_path)
                        if f.lower().endswith(('.jpg',
                                               '.jpeg',
@@ -141,14 +133,12 @@ def generate_augmented_images(p_path: str,
                                               '.gif',
                                               '.bmp'))]
 
-        # Count existing images
         valid_images_count = len(image_files)
         needed = max(0, target_count - valid_images_count)
 
         if needed == 0:
             print(f"  Class '{class_name}' already has "
                   f"{valid_images_count} images. Skipping augmentation.")
-            # Copy existing images to output directory
             for img_file in image_files:
                 src = os.path.join(class_path, img_file)
                 dst = os.path.join(output_class_dir, img_file)
@@ -159,16 +149,10 @@ def generate_augmented_images(p_path: str,
         print(f"  Found {valid_images_count} images. "
               f"Generating {needed} more.")
 
-        # Copy original images to output and augment
-        for img_idx, img_file in enumerate(image_files):
+        for img_file in image_files:
             img_path = os.path.join(class_path, img_file)
 
-            if needed <= 0:
-                break
-
-            # Skip if not a jpg (Augmentation class works best with jpg)
             if not img_file.lower().endswith(('.jpg', '.jpeg')):
-                # Convert to jpg and save to output
                 try:
                     img = Image.open(img_path).convert('RGB')
                     jpg_filename = os.path.splitext(img_file)[0] + '.jpg'
@@ -179,18 +163,24 @@ def generate_augmented_images(p_path: str,
                     print(f"  Error converting {img_file}: {e}")
                 continue
 
-            # Copy original to output
             dst_original = os.path.join(output_class_dir, img_file)
             shutil.copy2(img_path, dst_original)
             total_images += 1
 
+        for img_idx, img_file in enumerate(image_files):
+            if needed <= 0:
+                break
+
+            img_path = os.path.join(class_path, img_file)
+
+            if not img_file.lower().endswith(('.jpg', '.jpeg')):
+                continue
+
             try:
-                # Create temporary copy in output directory for augmentation
                 temp_img_path = os.path.join(output_class_dir,
                                              f"temp_{img_idx}_{img_file}")
                 shutil.copy2(img_path, temp_img_path)
 
-                # Apply augmentation using Augmentation class
                 aug = Augmentation(temp_img_path, p_visual_mode=False)
                 aug_methods = [
                     aug.rotation,
@@ -209,7 +199,6 @@ def generate_augmented_images(p_path: str,
                         total_images += 1
                         needed -= 1
 
-                # Clean up temporary file
                 if os.path.exists(temp_img_path):
                     os.remove(temp_img_path)
 
@@ -219,7 +208,6 @@ def generate_augmented_images(p_path: str,
 
             except Exception as e:
                 print(f"  Error augmenting {img_file}: {e}")
-                # Clean up temporary file if it exists
                 if os.path.exists(temp_img_path):
                     os.remove(temp_img_path)
                 continue
@@ -250,7 +238,6 @@ def create_training_package(data_dir: str,
     print(f"\nCreating training package: {zip_filename}")
 
     with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        # Add augmented images
         if os.path.isdir(data_dir):
             print(f"  Adding augmented images from {data_dir}")
             for root, dirs, files in os.walk(data_dir):
@@ -261,18 +248,15 @@ def create_training_package(data_dir: str,
                                                            data_dir))
                     zipf.write(file_path, arcname)
 
-        # Add model file
         if os.path.exists(model_path):
             print(f"  Adding model: {model_path}")
             zipf.write(model_path, 'models/' + os.path.basename(model_path))
 
-        # Add model weights
         if os.path.exists(weights_path):
             print(f"  Adding weights: {weights_path}")
             zipf.write(weights_path,
                        'models/' + os.path.basename(weights_path))
 
-        # Add training history plot
         if os.path.exists(history_path):
             print(f"  Adding training history: {history_path}")
             zipf.write(history_path, os.path.basename(history_path))
@@ -284,7 +268,6 @@ def create_training_package(data_dir: str,
 def main():
     v_path, v_model = parse_args()
 
-    # Use memory-efficient data generators instead of loading all data at once
     batch_size = 16
 
     (train_generator,
@@ -298,16 +281,13 @@ def main():
     if v_model:
         model.load_weights(v_model)
 
-    # Compile with lower learning rate
     model.compile(
         loss='categorical_crossentropy',
         optimizer=Adam(learning_rate=0.001),
         metrics=['accuracy']
     )
 
-    # Callbacks for better training
     callbacks = [
-        # Reduce learning rate when validation loss plateaus
         ReduceLROnPlateau(
             monitor='val_loss',
             factor=0.5,
@@ -315,14 +295,12 @@ def main():
             min_lr=1e-7,
             verbose=1
         ),
-        # Stop early if not improving
         EarlyStopping(
             monitor='val_loss',
             patience=8,
             restore_best_weights=True,
             verbose=1
         ),
-        # Save best model during training
         ModelCheckpoint(
             'best_model.weights.h5',
             monitor='val_accuracy',
@@ -337,7 +315,6 @@ def main():
         print("Generating augmented training data...")
         print("="*60 + "\n")
 
-        # Generate and save augmented images
         augmented_data_dir = generate_augmented_images(
             v_path,
             output_dir='augmented_data',
@@ -349,10 +326,9 @@ def main():
         print("Starting training with improved architecture...")
         print("="*60 + "\n")
 
-        # Use fit with generators for memory-efficient training
         history = model.fit(
             train_generator,
-            epochs=50,  # More epochs but will stop early if not improving
+            epochs=50,
             validation_data=validation_generator,
             callbacks=callbacks,
             verbose=1
@@ -371,11 +347,9 @@ def main():
         plt.savefig('training_history.png')
         print("\nTraining history saved to 'training_history.png'")
 
-        # Save the model
         model.save('leaf_disease_model.h5')
         print("Model saved to 'leaf_disease_model.h5'")
 
-        # Create training package with augmented data and model
         print("\n" + "="*60)
         print("Creating training package...")
         print("="*60)

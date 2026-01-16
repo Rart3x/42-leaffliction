@@ -159,7 +159,6 @@ class Augmentation:
         Display all augmented images side by side in a single window.
         Also saves the final collage as a single image.
         """
-        # List of all images
         images = [
             self.img,
             self.img_rotated,
@@ -200,7 +199,6 @@ class Augmentation:
             if i < limit:
                 method()
 
-        # Display the final collage
         if self.visual_mode:
             collage.show()
 

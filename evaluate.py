@@ -48,10 +48,8 @@ def load_test_data(test_dir: str, batch_size: int = 32):
     if not os.path.exists(test_dir):
         raise FileNotFoundError(f"Test directory not found: {test_dir}")
 
-    # Create data generator (only rescaling, no augmentation)
     test_datagen = ImageDataGenerator(rescale=1./255)
 
-    # Load test data
     test_generator = test_datagen.flow_from_directory(
         test_dir,
         target_size=(256, 256),
@@ -113,7 +111,6 @@ def save_misclassified_examples(y_true,
                 'predicted_label': class_names[pred_idx]
             })
 
-    # Limit number of examples
     misclassified = misclassified[:max_examples]
 
     with open(output_path, 'w') as f:
@@ -144,14 +141,12 @@ def evaluate_model(model_path: str,
     :param batch_size: Batch size for evaluation
     :param output_dir: Directory to save results
     """
-    # Create output directory
     os.makedirs(output_dir, exist_ok=True)
 
     print("\n" + "="*80)
     print("LEAF DISEASE CLASSIFICATION - MODEL EVALUATION")
     print("="*80 + "\n")
 
-    # Load test data
     print(f"Loading test data from: {test_dir}")
     test_generator = load_test_data(test_dir, batch_size)
 
@@ -168,24 +163,19 @@ def evaluate_model(model_path: str,
         print("Consider creating a larger test "
               "set for more reliable evaluation.\n")
 
-    # Create and load model
     print(f"Loading model from: {model_path}")
     model = create_model(num_classes=num_classes)
     model = load_model_weights(model, model_path)
 
     print("✓ Model loaded successfully\n")
 
-    # Make predictions
     print("Running predictions on test set...")
     predictions = model.predict(test_generator, verbose=1)
 
-    # Get predicted classes
     y_pred = np.argmax(predictions, axis=1)
 
-    # Get true classes
     y_true = test_generator.classes
 
-    # Get class names in correct order
     class_indices = test_generator.class_indices
     class_names = [k for k, v in sorted(class_indices.items(),
                                         key=lambda item: item[1])]
@@ -194,11 +184,9 @@ def evaluate_model(model_path: str,
     print("EVALUATION RESULTS")
     print("-"*80 + "\n")
 
-    # Calculate overall accuracy
     overall_accuracy = accuracy_score(y_true, y_pred)
     print(f"Overall Accuracy: {overall_accuracy*100:.2f}%")
 
-    # Check if meets requirement
     if overall_accuracy >= 0.90:
         print("PASSED: Accuracy exceeds 90% requirement")
     else:
@@ -207,7 +195,6 @@ def evaluate_model(model_path: str,
 
     print("\n")
 
-    # Generate classification report
     report = classification_report(y_true,
                                    y_pred,
                                    target_names=class_names,
@@ -216,24 +203,20 @@ def evaluate_model(model_path: str,
     print("-"*80)
     print(report)
 
-    # Get classification report as dict for plotting
     report_dict = classification_report(y_true,
                                         y_pred,
                                         target_names=class_names,
                                         output_dict=True)
 
-    # Generate confusion matrix
     cm = confusion_matrix(y_true, y_pred)
     print("\nConfusion Matrix:")
     print("-"*80)
     print(cm)
     print()
 
-    # Plot confusion matrix
     cm_plot_path = os.path.join(output_dir, 'confusion_matrix.png')
     plot_confusion_matrix(cm, class_names, cm_plot_path)
 
-    # Save misclassified examples
     misclassified_path = os.path.join(output_dir, 'misclassified.txt')
     save_misclassified_examples(y_true,
                                 y_pred,
