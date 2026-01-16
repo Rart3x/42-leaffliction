@@ -178,8 +178,6 @@ def predict(model_path: str, image_path: str, class_names: list = CLASS_NAMES):
             transformed_img,
             class_names[predicted_class_idx],
             confidence,
-            predictions[0],
-            class_names
         )
     except Exception as e:
         print(f"Warning: Could not generate visualization: {e}")
